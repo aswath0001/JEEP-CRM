@@ -14,6 +14,14 @@ const HomePage = () => {
     vehicle_model: "",
     delivery_date: "",
   });
+  const [employee, setEmployee] = useState([]);
+  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [newEmployee, setNewEmployee] = useState({
+    name: "",
+    Mobile_no: "",
+    Email_id: "",
+    Role: "",
+  });
   const [editingLead, setEditingLead] = useState(null);
   const [timers, setTimers] = useState({});
   const [running, setRunning] = useState({});
@@ -51,54 +59,75 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const employeeRef = ref(database, "EMPLOYEE");
+        const snapshot = await get(employeeRef);
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const employeeArray = Object.keys(data).map((key) => ({
+            id: key,
+            ...data[key],
+          }));
+          setEmployee(employeeArray);
+        }
+      } catch (error) {
+        console.error("Error fetching employees:", error);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
+
+  useEffect(() => {
     const interval = setInterval(() => {
       setTimers((prevTimers) => {
         const updatedTimers = { ...prevTimers };
-  
+
         Object.keys(running).forEach(async (id) => {
           if (running[id]) {
             updatedTimers[id] = (updatedTimers[id] || 0) + 1000;
-            
+
             // Update Firebase with the new timer value
             await update(ref(database, `LEAD/${id}`), { timer: updatedTimers[id] });
           }
         });
-  
+
         return updatedTimers;
       });
     }, 1000);
-  
+
     return () => clearInterval(interval);
   }, [running]);
-  
+
   // Toggle Timer Start/Pause
   const toggleTimer = async (leadId) => {
     const isCurrentlyRunning = running[leadId];
-  
+
     const updatedLeadData = {
       isRunning: !isCurrentlyRunning,
       timer: timers[leadId] || 0, // Keep existing timer value
     };
-  
+
     setRunning((prev) => ({ ...prev, [leadId]: !isCurrentlyRunning }));
-  
+
     await update(ref(database, `LEAD/${leadId}`), updatedLeadData);
   };
-  
+
   // Format milliseconds into HH:MM:SS
   const formatTimer = (milliseconds = 0) => {
     if (!milliseconds || isNaN(milliseconds)) {
       milliseconds = 0; // Ensure it starts at 0 if undefined or NaN
     }
-  
+
     const totalSeconds = Math.floor(milliseconds / 1000);
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-  
+
     return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
-  
+
   const handleAddOrUpdateLead = async () => {
     if (!newLead.name || !newLead.contact || !newLead.vehicle_number || !newLead.vehicle_model || !newLead.delivery_date) {
       alert("All fields are required!");
@@ -125,6 +154,23 @@ const HomePage = () => {
     }
   };
 
+  const handleAddEmployee = async () => {
+    if (!newEmployee.name || !newEmployee.Mobile_no || !newEmployee.Email_id || !newEmployee.Role) {
+      alert("All fields are required!");
+      return;
+    }
+
+    try {
+      const employeeRef = push(ref(database, "EMPLOYEE"));
+      await set(employeeRef, newEmployee);
+      setEmployee([...employee, { id: employeeRef.key, ...newEmployee }]);
+      setShowEmployeeModal(false);
+      setNewEmployee({ name: "", Mobile_no: "", Email_id: "", Role: "" });
+    } catch (error) {
+      console.error("Error saving employee:", error);
+    }
+  };
+
   const deleteLead = async (leadId) => {
     if (window.confirm("Are you sure you want to delete this lead?")) {
       try {
@@ -136,24 +182,48 @@ const HomePage = () => {
     }
   };
 
+  const deleteEmployee = async (employeeId) => {
+    if (window.confirm("Are you sure you want to delete this employee?")) {
+      try {
+        await remove(ref(database, `EMPLOYEE/${employeeId}`));
+        setEmployee((prev) => prev.filter((emp) => emp.id !== employeeId));
+      } catch (error) {
+        console.error("Error deleting employee:", error);
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen p-6 font-poppins">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Leads</h2>
-        <button
-          className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-          onClick={() => {
-            setNewLead({ name: "", contact: "", vehicle_number: "", vehicle_model: "", delivery_date: "" });
-            setEditingLead(null);
-            setShowLeadModal(true);
-          }}
-        >
-          <PlusCircle size={20} />
-          <span>Add Lead</span>
-        </button>
+        <div className="flex space-x-4">
+          <button
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            onClick={() => {
+              setNewEmployee({ name: "", Mobile_no: "", Email_id: "", Role: "" });
+              setShowEmployeeModal(true);
+            }}
+          >
+            <PlusCircle size={20} />
+            <span>Add Employee</span>
+          </button>
+          <button
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            onClick={() => {
+              setNewLead({ name: "", contact: "", vehicle_number: "", vehicle_model: "", delivery_date: "" });
+              setEditingLead(null);
+              setShowLeadModal(true);
+            }}
+          >
+            <PlusCircle size={20} />
+            <span>Add Lead</span>
+          </button>
+        </div>
       </div>
-  
-      <table className="min-w-full border-separate border-spacing-y-2">
+
+      {/* Leads Table */}
+      <table className="min-w-full border-separate border-spacing-y-2 mb-8">
         <thead>
           <tr>
             <th>Profile</th>
@@ -178,7 +248,7 @@ const HomePage = () => {
               <td>{lead.contact}</td>
               <td>{lead.delivery_date}</td>
               <td className="text-center">{formatTimer(timers[lead.id])}</td>
-  
+
               {/* Actions Column */}
               <td className="flex space-x-2">
                 {/* Timer Button */}
@@ -224,7 +294,40 @@ const HomePage = () => {
         </tbody>
       </table>
 
-      {/* Modal */}
+      {/* Employees Table */}
+      <h2 className="text-2xl font-bold mb-4">Employees</h2>
+      <table className="min-w-full border-separate border-spacing-y-2">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Mobile Number</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {employee.map((emp) => (
+            <tr key={emp.id} className="even:bg-gray-100 odd:bg-white shadow-sm">
+              <td>{emp.name}</td>
+              <td>{emp.Mobile_no}</td>
+              <td>{emp.Email_id}</td>
+              <td>{emp.Role}</td>
+              <td className="flex space-x-2">
+                {/* Delete Button */}
+                <button
+                  onClick={() => deleteEmployee(emp.id)}
+                  className="bg-red-500 text-white px-3 py-1 rounded flex items-center"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Add/Edit Lead Modal */}
       {showLeadModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg w-96 relative">
@@ -283,6 +386,62 @@ const HomePage = () => {
               className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
             >
               {editingLead ? "Update Lead" : "Add Lead"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Add Employee Modal */}
+      {showEmployeeModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-96 relative">
+            {/* Close Button */}
+            <button
+              className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
+              onClick={() => setShowEmployeeModal(false)}
+            >
+              <X size={20} />
+            </button>
+
+            {/* Modal Title */}
+            <h2 className="text-xl font-bold mb-4">Add Employee</h2>
+
+            {/* Form Inputs */}
+            <input
+              type="text"
+              placeholder="Name"
+              className="w-full p-2 border rounded mb-2"
+              value={newEmployee.name}
+              onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+            />
+            <input
+              type="text"
+              placeholder="Mobile Number"
+              className="w-full p-2 border rounded mb-2"
+              value={newEmployee.Mobile_no}
+              onChange={(e) => setNewEmployee({ ...newEmployee, Mobile_no: e.target.value })}
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              className="w-full p-2 border rounded mb-2"
+              value={newEmployee.Email_id}
+              onChange={(e) => setNewEmployee({ ...newEmployee, Email_id: e.target.value })}
+            />
+            <input
+              type="text"
+              placeholder="Role"
+              className="w-full p-2 border rounded mb-4"
+              value={newEmployee.Role}
+              onChange={(e) => setNewEmployee({ ...newEmployee, Role: e.target.value })}
+            />
+
+            {/* Submit Button */}
+            <button
+              onClick={handleAddEmployee}
+              className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+            >
+              Add Employee
             </button>
           </div>
         </div>
