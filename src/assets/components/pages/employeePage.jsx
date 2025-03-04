@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { database } from "../firebase/firebase";
-import { ref, get, set, remove } from "firebase/database";
-import { PlusCircle, Trash2, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ref, get, set, remove, update } from "firebase/database";
+import { PlusCircle, Trash2, X, Edit } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom"; // Import useLocation
 
 const EmployeesPage = () => {
   const [employees, setEmployees] = useState([]);
@@ -13,8 +13,10 @@ const EmployeesPage = () => {
     Email_id: "",
     Role: "",
   });
+  const [editingEmployee, setEditingEmployee] = useState(null); // State to track the employee being edited
 
   const navigate = useNavigate();
+  const location = useLocation(); // Get the current route
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -36,35 +38,40 @@ const EmployeesPage = () => {
     fetchEmployees();
   }, []);
 
-  const handleAddEmployee = async () => {
+  const handleAddOrUpdateEmployee = async () => {
     if (!newEmployee.name || !newEmployee.Mobile_no || !newEmployee.Email_id || !newEmployee.Role) {
       alert("All fields are required!");
       return;
     }
 
     try {
-      // Reference to the counter in Firebase
-      const counterRef = ref(database, "EMPLOYEE_COUNTER");
-      const counterSnapshot = await get(counterRef);
+      if (editingEmployee) {
+        // Update existing employee
+        const employeeRef = ref(database, `EMPLOYEE/${editingEmployee.id}`);
+        await update(employeeRef, newEmployee);
+        setEmployees((prev) =>
+          prev.map((emp) => (emp.id === editingEmployee.id ? { ...emp, ...newEmployee } : emp))
+        );
+        setEditingEmployee(null); // Clear editing state
+      } else {
+        // Add new employee
+        const counterRef = ref(database, "EMPLOYEE_COUNTER");
+        const counterSnapshot = await get(counterRef);
 
-      let newId = 1; // Default first ID
-      if (counterSnapshot.exists()) {
-        newId = counterSnapshot.val() + 1;
+        let newId = 1; // Default first ID
+        if (counterSnapshot.exists()) {
+          newId = counterSnapshot.val() + 1;
+        }
+
+        const employeeRef = ref(database, `EMPLOYEE/${newId}`);
+        await set(employeeRef, { id: newId, ...newEmployee });
+        await set(counterRef, newId);
+
+        setEmployees([...employees, { id: newId, ...newEmployee }]);
       }
 
-      // Reference to new employee using the incremented ID
-      const employeeRef = ref(database, `EMPLOYEE/${newId}`);
-
-      // Save the employee with the new ID
-      await set(employeeRef, { id: newId, ...newEmployee });
-
-      // Update the counter in Firebase
-      await set(counterRef, newId);
-
-      // Update state
-      setEmployees([...employees, { id: newId, ...newEmployee }]);
       setShowEmployeeModal(false);
-      setNewEmployee({ name: "", Mobile_no: "", Email_id: "", Role: "" });
+      setNewEmployee({ name: "", Mobile_no: "", Email_id: "", Role: "" }); // Reset form
     } catch (error) {
       console.error("Error saving employee:", error);
     }
@@ -81,6 +88,12 @@ const EmployeesPage = () => {
     }
   };
 
+  const handleEditEmployee = (employee) => {
+    setEditingEmployee(employee); // Set the employee being edited
+    setNewEmployee({ ...employee }); // Populate the form with employee data
+    setShowEmployeeModal(true); // Open the modal
+  };
+
   return (
     <div className="flex flex-col min-h-screen p-6 font-poppins">
       {/* Navigation Bar */}
@@ -91,26 +104,36 @@ const EmployeesPage = () => {
             <nav className="flex space-x-4">
               <button
                 onClick={() => navigate("/leads")}
-                className="text-gray-700 hover:text-blue-500 transition-all"
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/leads" ? "bg-gray-200" : ""
+                }`}
               >
                 Leads
               </button>
               <button
                 onClick={() => navigate("/employees")}
-                className="text-gray-700 hover:text-blue-500 transition-all"
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/employees" ? "bg-gray-200" : ""
+                }`}
               >
                 Employees
               </button>
               <button
                 onClick={() => navigate("/report")}
-                className="text-gray-700 hover:text-blue-500 transition-all"
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/report" ? "bg-gray-200" : ""
+                }`}
               >
                 Reports
               </button>
             </nav>
             <button
               className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
-              onClick={() => setShowEmployeeModal(true)}
+              onClick={() => {
+                setEditingEmployee(null); // Clear editing state
+                setNewEmployee({ name: "", Mobile_no: "", Email_id: "", Role: "" }); // Reset form
+                setShowEmployeeModal(true); // Open the modal
+              }}
             >
               <PlusCircle size={20} />
               <span>Add Employee</span>
@@ -141,12 +164,22 @@ const EmployeesPage = () => {
                 <td className="p-3">{emp.Email_id}</td>
                 <td className="p-3">{emp.Role}</td>
                 <td className="p-3">
-                  <button
-                    onClick={() => deleteEmployee(emp.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded flex items-center hover:bg-red-600"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex space-x-2">
+                    {/* Edit Button */}
+                    <button
+                      onClick={() => handleEditEmployee(emp)}
+                      className="bg-blue-500 text-white px-3 py-1 rounded flex items-center hover:bg-blue-600"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    {/* Delete Button */}
+                    <button
+                      onClick={() => deleteEmployee(emp.id)}
+                      className="bg-red-500 text-white px-3 py-1 rounded flex items-center hover:bg-red-600"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -154,7 +187,7 @@ const EmployeesPage = () => {
         </table>
       </div>
 
-      {/* Add Employee Modal */}
+      {/* Add/Edit Employee Modal */}
       {showEmployeeModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg w-96 relative">
@@ -164,7 +197,9 @@ const EmployeesPage = () => {
             >
               <X size={20} />
             </button>
-            <h2 className="text-xl font-bold mb-4">Add Employee</h2>
+            <h2 className="text-xl font-bold mb-4">
+              {editingEmployee ? "Edit Employee" : "Add Employee"}
+            </h2>
             <input
               type="text"
               placeholder="Name"
@@ -194,10 +229,10 @@ const EmployeesPage = () => {
               onChange={(e) => setNewEmployee({ ...newEmployee, Role: e.target.value })}
             />
             <button
-              onClick={handleAddEmployee}
+              onClick={handleAddOrUpdateEmployee}
               className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
             >
-              Add Employee
+              {editingEmployee ? "Update Employee" : "Add Employee"}
             </button>
           </div>
         </div>

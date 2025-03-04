@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { database } from "../firebase/firebase";
 import { ref, get, set, push, update, remove } from "firebase/database";
 import { MessageSquare, PlusCircle, Edit, Trash2, X, Play, Pause, RefreshCw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // Import useLocation
 
 const HomePage = () => {
   const [leads, setLeads] = useState([]);
@@ -21,6 +21,7 @@ const HomePage = () => {
   const [employees, setEmployees] = useState([]); // State to store employees
 
   const navigate = useNavigate();
+  const location = useLocation(); // Get the current route
 
   // Fetch leads from Firebase
   useEffect(() => {
@@ -203,19 +204,25 @@ const HomePage = () => {
             <nav className="flex space-x-4">
               <button
                 onClick={() => navigate("/leads")}
-                className="text-gray-700 hover:text-blue-500 transition-all"
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/leads" ? "bg-gray-300" : ""
+                }`}
               >
                 Leads
               </button>
               <button
                 onClick={() => navigate("/employees")}
-                className="text-gray-700 hover:text-blue-500 transition-all"
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/employees" ? "bg-gray-300" : ""
+                }`}
               >
                 Employees
               </button>
               <button
                 onClick={() => navigate("/report")}
-                className="text-gray-700 hover:text-blue-500 transition-all"
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/report" ? "bg-gray-300" : ""
+                }`}
               >
                 Reports
               </button>
