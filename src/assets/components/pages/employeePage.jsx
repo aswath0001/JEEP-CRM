@@ -72,16 +72,26 @@ const EmployeesPage = () => {
     <div className="flex flex-col min-h-screen p-6 font-poppins">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Employees</h2>
-        <button
-          className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-          onClick={() => {
-            setNewEmployee({ name: "", Mobile_no: "", Email_id: "", Role: "" });
-            setShowEmployeeModal(true);
-          }}
-        >
-          <PlusCircle size={20} />
-          <span>Add Employee</span>
-        </button>
+        <div className="flex space-x-4">
+          {/* Back to Dashboard Button */}
+          <button
+            className="flex items-center space-x-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+            onClick={() => navigate("/home")}
+          >
+            <span>Back to Dashboard</span>
+          </button>
+          {/* Add Employee Button */}
+          <button
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            onClick={() => {
+              setNewEmployee({ name: "", Mobile_no: "", Email_id: "", Role: "" });
+              setShowEmployeeModal(true);
+            }}
+          >
+            <PlusCircle size={20} />
+            <span>Add Employee</span>
+          </button>
+        </div>
       </div>
 
       {/* Employees Table */}

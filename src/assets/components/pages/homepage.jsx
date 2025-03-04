@@ -148,12 +148,11 @@ const HomePage = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Leads</h2>
         <div className="flex space-x-4">
-          <button
-            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            onClick={() => navigate("/employees")} // Navigate to Employees Page
+        <button
+            className="flex items-center space-x-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+            onClick={() => navigate("/home")}
           >
-            <PlusCircle size={20} />
-            <span>Employees</span>
+            <span>Back to Dashboard</span>
           </button>
           <button
             className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
