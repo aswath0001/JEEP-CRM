@@ -83,24 +83,43 @@ const EmployeesPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen p-6 font-poppins">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Employees</h2>
-        <div className="flex space-x-4">
-          <button
-            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-            onClick={() => navigate("/home")}
-          >
-            Back to Dashboard
-          </button>
-          <button
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
-            onClick={() => setShowEmployeeModal(true)}
-          >
-            <PlusCircle size={20} /> <span>Add Employee</span>
-          </button>
+      {/* Navigation Bar */}
+      <div className="bg-white shadow-sm mb-6">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-800">Employees</h2>
+            <nav className="flex space-x-4">
+              <button
+                onClick={() => navigate("/leads")}
+                className="text-gray-700 hover:text-blue-500 transition-all"
+              >
+                Leads
+              </button>
+              <button
+                onClick={() => navigate("/employees")}
+                className="text-gray-700 hover:text-blue-500 transition-all"
+              >
+                Employees
+              </button>
+              <button
+                onClick={() => navigate("/report")}
+                className="text-gray-700 hover:text-blue-500 transition-all"
+              >
+                Reports
+              </button>
+            </nav>
+            <button
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
+              onClick={() => setShowEmployeeModal(true)}
+            >
+              <PlusCircle size={20} />
+              <span>Add Employee</span>
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* Employees Table */}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse bg-white shadow-lg rounded-lg text-left">
           <thead>
@@ -135,6 +154,7 @@ const EmployeesPage = () => {
         </table>
       </div>
 
+      {/* Add Employee Modal */}
       {showEmployeeModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg w-96 relative">

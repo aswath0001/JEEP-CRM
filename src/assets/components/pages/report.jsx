@@ -31,42 +31,65 @@ const ReportPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen p-6 font-poppins">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Reports</h2>
-        <div className="flex space-x-4">
-          {/* Back to Dashboard Button */}
-          <button
-            className="flex items-center space-x-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-            onClick={() => navigate("/home")}
-          >
-            <span>Back to Dashboard</span>
-          </button>
-        </div>
-      </div>
+      {/* Navigation Bar */}
+      
+      <div className="bg-white shadow-sm mb-6">
+  <div className="container mx-auto px-6 py-4">
+    <div className="flex justify-between items-center">
+      <h2 className="text-2xl font-bold text-gray-800">Reports</h2>
+      <nav className="flex space-x-4 mx-auto ">
+       <center>
+        <button
+          onClick={() => navigate("/leads")}
+          className="text-gray-700 hover:text-blue-500 transition-all"
+        >
+          Leads
+        </button>
+        <button
+          onClick={() => navigate("/employees")}
+          className="text-gray-700 hover:text-blue-500 transition-all"
+        >
+          Employees
+        </button>
+        <button
+          onClick={() => navigate("/report")}
+          className="text-gray-700 hover:text-blue-500 transition-all"
+        >
+          Reports
+        </button>
+        </center> 
+      </nav>
+    </div>
+  </div>
+</div>
+
+
 
       {/* Reports Table */}
-      <table className="min-w-full border-separate border-spacing-y-2">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Title</th>
-            <th>Description</th>
-            <th>Date</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {reports.map((report) => (
-            <tr key={report.id} className="even:bg-gray-100 odd:bg-white shadow-sm">
-              <td>{report.id}</td>
-              <td>{report.title}</td>
-              <td>{report.description}</td>
-              <td>{report.date}</td>
-              <td>{report.status}</td>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border-separate border-spacing-y-2">
+          <thead>
+            <tr className="bg-gray-200 text-gray-700">
+              <th className="p-3">ID</th>
+              <th className="p-3">Title</th>
+              <th className="p-3">Description</th>
+              <th className="p-3">Date</th>
+              <th className="p-3">Status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {reports.map((report) => (
+              <tr key={report.id} className="even:bg-gray-100 odd:bg-white shadow-sm">
+                <td className="p-3">{report.id}</td>
+                <td className="p-3">{report.title}</td>
+                <td className="p-3">{report.description}</td>
+                <td className="p-3">{report.date}</td>
+                <td className="p-3">{report.status}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* No Reports Found */}
       {reports.length === 0 && (

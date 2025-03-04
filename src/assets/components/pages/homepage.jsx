@@ -195,33 +195,50 @@ const HomePage = () => {
 
   return (
     <div className="flex flex-col min-h-screen p-6 font-poppins bg-gray-50">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Leads</h2>
-        <div className="flex space-x-4">
-          <button
-            className="flex items-center space-x-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all"
-            onClick={() => navigate("/home")}
-          >
-            <span>Back to Dashboard</span>
-          </button>
-          <button
-            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
-            onClick={() => {
-              setNewLead({
-                name: "",
-                contact: "",
-                vehicle_number: "",
-                vehicle_model: "",
-                delivery_date: "",
-                sales_rep: "", // Reset sales_rep field
-              });
-              setEditingLead(null);
-              setShowLeadModal(true);
-            }}
-          >
-            <PlusCircle size={20} />
-            <span>Add Lead</span>
-          </button>
+      {/* Navigation Bar */}
+      <div className="bg-white shadow-sm mb-6">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-800">Leads</h2>
+            <nav className="flex space-x-4">
+              <button
+                onClick={() => navigate("/leads")}
+                className="text-gray-700 hover:text-blue-500 transition-all"
+              >
+                Leads
+              </button>
+              <button
+                onClick={() => navigate("/employees")}
+                className="text-gray-700 hover:text-blue-500 transition-all"
+              >
+                Employees
+              </button>
+              <button
+                onClick={() => navigate("/report")}
+                className="text-gray-700 hover:text-blue-500 transition-all"
+              >
+                Reports
+              </button>
+            </nav>
+            <button
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
+              onClick={() => {
+                setNewLead({
+                  name: "",
+                  contact: "",
+                  vehicle_number: "",
+                  vehicle_model: "",
+                  delivery_date: "",
+                  sales_rep: "", // Reset sales_rep field
+                });
+                setEditingLead(null);
+                setShowLeadModal(true);
+              }}
+            >
+              <PlusCircle size={20} />
+              <span>Add Lead</span>
+            </button>
+          </div>
         </div>
       </div>
 
