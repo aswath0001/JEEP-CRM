@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { database } from "../firebase/firebase";
 import { ref, get } from "firebase/database";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const ReportPage = () => {
   const [reports, setReports] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation(); // Get the current route
 
-  // Fetch reports from Firebase (or any other data source)
+  // Fetch reports from Firebase
   useEffect(() => {
     const fetchReports = async () => {
       try {
@@ -32,38 +33,39 @@ const ReportPage = () => {
   return (
     <div className="flex flex-col min-h-screen p-6 font-poppins">
       {/* Navigation Bar */}
-      
       <div className="bg-white shadow-sm mb-6">
-  <div className="container mx-auto px-6 py-4">
-    <div className="flex justify-between items-center">
-      <h2 className="text-2xl font-bold text-gray-800">Reports</h2>
-      <nav className="flex space-x-4 mx-auto ">
-       <center>
-        <button
-          onClick={() => navigate("/leads")}
-          className="text-gray-700 hover:text-blue-500 transition-all"
-        >
-          Leads
-        </button>
-        <button
-          onClick={() => navigate("/employees")}
-          className="text-gray-700 hover:text-blue-500 transition-all"
-        >
-          Employees
-        </button>
-        <button
-          onClick={() => navigate("/report")}
-          className="text-gray-700 hover:text-blue-500 transition-all"
-        >
-          Reports
-        </button>
-        </center> 
-      </nav>
-    </div>
-  </div>
-</div>
-
-
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-800">Reports</h2>
+            <nav className="flex space-x-4 mx-auto">
+              <button
+                onClick={() => navigate("/leads")}
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/leads" ? "bg-gray-300" : ""
+                }`}
+              >
+                Leads
+              </button>
+              <button
+                onClick={() => navigate("/employees")}
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/employees" ? "bg-gray-300" : ""
+                }`}
+              >
+                Employees
+              </button>
+              <button
+                onClick={() => navigate("/report")}
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/report" ? "bg-gray-300" : ""
+                }`}
+              >
+                Reports
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
 
       {/* Reports Table */}
       <div className="overflow-x-auto">
