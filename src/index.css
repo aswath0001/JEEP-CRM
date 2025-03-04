@@ -1,0 +1,192 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+import React, { useState, useEffect } from "react";
+import profileIcon from "../../../assets/images/image.png";
+import { database } from "../firebase/firebase";
+import { ref, get, set, push, update, remove } from "firebase/database";
+import { Phone, MessageSquare, PlusCircle, Edit, Trash2, X } from "lucide-react";
+
+const HomePage = () => {
+  const [leads, setLeads] = useState([]);
+  const [showLeadModal, setShowLeadModal] = useState(false);
+  const [newLead, setNewLead] = useState({ name: "", role: "", contact: "", source: "" });
+  const [editingLead, setEditingLead] = useState(null);
+  const [timers, setTimers] = useState({});
+  const [intervals, setIntervals] = useState({});
+
+  useEffect(() => {
+    const fetchLeads = async () => {
+      try {
+        const leadRef = ref(database, "LEAD");
+        const snapshot = await get(leadRef);
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const leadArray = Object.keys(data).map((key) => ({
+            id: key,
+            ...data[key],
+          }));
+          setLeads(leadArray);
+          const initialTimers = {};
+          leadArray.forEach((lead) => {
+            initialTimers[lead.id] = 0;
+          });
+          setTimers(initialTimers);
+        }
+      } catch (error) {
+        console.error("Error fetching leads:", error);
+      }
+    };
+
+    fetchLeads();
+  }, []);
+
+  const toggleTimer = (leadId) => {
+    if (intervals[leadId]) {
+      clearInterval(intervals[leadId]);
+      setIntervals((prev) => ({ ...prev, [leadId]: null }));
+    } else {
+      const interval = setInterval(() => {
+        setTimers((prev) => ({ ...prev, [leadId]: prev[leadId] + 1 }));
+      }, 1000);
+      setIntervals((prev) => ({ ...prev, [leadId]: interval }));
+    }
+  };
+
+  const formatTime = (seconds) => {
+    const hours = String(Math.floor(seconds / 3600)).padStart(2, "0");
+    const minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
+    const secs = String(seconds % 60).padStart(2, "0");
+    return `${hours}:${minutes}:${secs}`;
+  };
+
+  const addOrUpdateLead = async () => {
+    if (!newLead.name || !newLead.role || !newLead.contact || !newLead.source) {
+      alert("All fields are required!");
+      return;
+    }
+
+    try {
+      if (editingLead) {
+        await update(ref(database, `LEAD/${editingLead.id}`), newLead);
+        setLeads((prev) =>
+          prev.map((lead) => (lead.id === editingLead.id ? { ...lead, ...newLead } : lead))
+        );
+        setEditingLead(null);
+      } else {
+        const leadRef = push(ref(database, "LEAD"));
+        await set(leadRef, newLead);
+        setLeads([...leads, { id: leadRef.key, ...newLead }]);
+        setTimers((prev) => ({ ...prev, [leadRef.key]: 0 }));
+      }
+
+      setShowLeadModal(false);
+      setNewLead({ name: "", role: "", contact: "", source: "" });
+    } catch (error) {
+      console.error("Error saving lead:", error);
+    }
+  };
+
+  const deleteLead = async (leadId) => {
+    if (window.confirm("Are you sure you want to delete this lead?")) {
+      try {
+        await remove(ref(database, `LEAD/${leadId}`));
+        setLeads((prev) => prev.filter((lead) => lead.id !== leadId));
+      } catch (error) {
+        console.error("Error deleting lead:", error);
+      }
+    }
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen p-6 font-poppins">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Leads</h2>
+        <button
+          className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          onClick={() => {
+            setEditingLead(null);
+            setNewLead({ name: "", role: "", contact: "", source: "" });
+            setShowLeadModal(true);
+          }}
+        >
+          <PlusCircle size={20} />
+          <span>Add Lead</span>
+        </button>
+      </div>
+
+      <table className="min-w-full border-separate border-spacing-y-2">
+        <thead>
+          <tr>
+            <th>Profile</th>
+            <th>Name</th>
+            <th>Vehicle number</th>
+            <th>Contact</th>
+            <th></th>
+            <th>Timer</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {leads.map((lead) => (
+            <tr key={lead.id} className="even:bg-gray-100 odd:bg-white shadow-sm">
+              <td><img src={profileIcon} alt="Profile" className="w-10 h-10 rounded-full" /></td>
+              <td>{lead.name}</td>
+              <td>{lead.role}</td>
+              <td>{lead.contact}</td>
+              <td>{lead.source}</td>
+              <td>{formatTime(timers[lead.id] || 0)}</td>
+              <td className="flex space-x-2">
+                <button onClick={() => toggleTimer(lead.id)} className="bg-green-600 text-white px-3 py-1 rounded">
+                  {intervals[lead.id] ? "Stop" : "Start"}
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingLead(lead);
+                    setNewLead({ name: lead.name, role: lead.role, contact: lead.contact, source: lead.source });
+                    setShowLeadModal(true);
+                  }}
+                  className="bg-blue-500 text-white px-3 py-1 rounded"
+                >
+                  <Edit size={16} />
+                </button>
+                <button onClick={() => deleteLead(lead.id)} className="bg-red-500 text-white px-3 py-1 rounded"><Trash2 size={16} /></button>
+                
+                {/* WhatsApp Button }
+                <a
+                  href={`https://wa.me/${lead.contact}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-green-500 text-white px-3 py-1 rounded flex items-center space-x-1"
+                >
+                  <MessageSquare  />
+                  
+                </a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {showLeadModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-96">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">{editingLead ? "Edit Lead" : "Add New Lead"}</h2>
+              <button onClick={() => setShowLeadModal(false)}><X size={20} /></button>
+            </div>
+            <input type="text" placeholder="Name" value={newLead.name} onChange={(e) => setNewLead({ ...newLead, name: e.target.value })} className="w-full mb-2 p-2 border rounded" />
+            <input type="text" placeholder="Role" value={newLead.role} onChange={(e) => setNewLead({ ...newLead, role: e.target.value })} className="w-full mb-2 p-2 border rounded" />
+            <input type="text" placeholder="Contact" value={newLead.contact} onChange={(e) => setNewLead({ ...newLead, contact: e.target.value })} className="w-full mb-2 p-2 border rounded" />
+            <input type="text" placeholder="Source" value={newLead.source} onChange={(e) => setNewLead({ ...newLead, source: e.target.value })} className="w-full mb-2 p-2 border rounded" />
+            <button className="px-4 py-2 bg-green-600 text-white rounded" onClick={addOrUpdateLead}>{editingLead ? "Update" : "Add"}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default HomePage;*/
