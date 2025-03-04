@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import profileIcon from "../../../assets/images/image.png";
 import { database } from "../firebase/firebase";
 import { ref, get, set, push, update, remove } from "firebase/database";
-import { MessageSquare, PlusCircle, Edit, Trash2, X, Play, Pause } from "lucide-react";
+import { MessageSquare, PlusCircle, Edit, Trash2, X, Play, Pause, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const HomePage = () => {
@@ -14,10 +13,12 @@ const HomePage = () => {
     vehicle_number: "",
     vehicle_model: "",
     delivery_date: "",
+    sales_rep: "", // Added sales_rep field
   });
   const [editingLead, setEditingLead] = useState(null);
   const [timers, setTimers] = useState({});
   const [running, setRunning] = useState({});
+  const [employees, setEmployees] = useState([]); // State to store employees
 
   const navigate = useNavigate();
 
@@ -52,6 +53,28 @@ const HomePage = () => {
     };
 
     fetchLeads();
+  }, []);
+
+  // Fetch employees from Firebase
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const employeeRef = ref(database, "EMPLOYEE");
+        const snapshot = await get(employeeRef);
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const employeeArray = Object.keys(data).map((key) => ({
+            id: key,
+            ...data[key],
+          }));
+          setEmployees(employeeArray);
+        }
+      } catch (error) {
+        console.error("Error fetching employees:", error);
+      }
+    };
+
+    fetchEmployees();
   }, []);
 
   // Timer logic
@@ -90,6 +113,19 @@ const HomePage = () => {
     await update(ref(database, `LEAD/${leadId}`), updatedLeadData);
   };
 
+  // Reset Timer
+  const resetTimer = async (leadId) => {
+    const updatedLeadData = {
+      timer: 0,
+      isRunning: false,
+    };
+
+    setTimers((prev) => ({ ...prev, [leadId]: 0 }));
+    setRunning((prev) => ({ ...prev, [leadId]: false }));
+
+    await update(ref(database, `LEAD/${leadId}`), updatedLeadData);
+  };
+
   // Format milliseconds into HH:MM:SS
   const formatTimer = (milliseconds = 0) => {
     if (!milliseconds || isNaN(milliseconds)) {
@@ -106,7 +142,14 @@ const HomePage = () => {
 
   // Add or update a lead
   const handleAddOrUpdateLead = async () => {
-    if (!newLead.name || !newLead.contact || !newLead.vehicle_number || !newLead.vehicle_model || !newLead.delivery_date) {
+    if (
+      !newLead.name ||
+      !newLead.contact ||
+      !newLead.vehicle_number ||
+      !newLead.vehicle_model ||
+      !newLead.delivery_date ||
+      !newLead.sales_rep // Validate sales_rep field
+    ) {
       alert("All fields are required!");
       return;
     }
@@ -125,7 +168,14 @@ const HomePage = () => {
       }
 
       setShowLeadModal(false);
-      setNewLead({ name: "", contact: "", vehicle_number: "", vehicle_model: "", delivery_date: "" });
+      setNewLead({
+        name: "",
+        contact: "",
+        vehicle_number: "",
+        vehicle_model: "",
+        delivery_date: "",
+        sales_rep: "", // Reset sales_rep field
+      });
     } catch (error) {
       console.error("Error saving lead:", error);
     }
@@ -144,20 +194,27 @@ const HomePage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen p-6 font-poppins">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Leads</h2>
+    <div className="flex flex-col min-h-screen p-6 font-poppins bg-gray-50">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Leads</h2>
         <div className="flex space-x-4">
-        <button
-            className="flex items-center space-x-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+          <button
+            className="flex items-center space-x-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all"
             onClick={() => navigate("/home")}
           >
             <span>Back to Dashboard</span>
           </button>
           <button
-            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
             onClick={() => {
-              setNewLead({ name: "", contact: "", vehicle_number: "", vehicle_model: "", delivery_date: "" });
+              setNewLead({
+                name: "",
+                contact: "",
+                vehicle_number: "",
+                vehicle_model: "",
+                delivery_date: "",
+                sales_rep: "", // Reset sales_rep field
+              });
               setEditingLead(null);
               setShowLeadModal(true);
             }}
@@ -169,76 +226,84 @@ const HomePage = () => {
       </div>
 
       {/* Leads Table */}
-      <table className="min-w-full border-separate border-spacing-y-2 mb-8">
-        <thead>
-          <tr>
-            <th>Profile</th>
-            <th>Name</th>
-            <th>Vehicle Number</th>
-            <th>Vehicle Model</th>
-            <th>Contact</th>
-            <th>Delivery Date</th>
-            <th>Timer</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {leads.map((lead) => (
-            <tr key={lead.id} className="even:bg-gray-100 odd:bg-white shadow-sm">
-              <td>
-                <img src={profileIcon} alt="Profile" className="w-10 h-10 rounded-full" />
-              </td>
-              <td>{lead.name}</td>
-              <td>{lead.vehicle_number}</td>
-              <td>{lead.vehicle_model}</td>
-              <td>{lead.contact}</td>
-              <td>{lead.delivery_date}</td>
-              <td className="text-center">{formatTimer(timers[lead.id])}</td>
-
-              {/* Actions Column */}
-              <td className="flex space-x-2">
-                {/* Timer Button */}
-                <button
-                  onClick={() => toggleTimer(lead.id)}
-                  className="bg-yellow-500 text-white px-3 py-1 rounded"
-                >
-                  {running[lead.id] ? <Pause size={16} /> : <Play size={16} />}
-                </button>
-
-                {/* WhatsApp Link */}
-                <a
-                  href={`https://wa.me/${lead.contact}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-green-500 text-white px-3 py-1 rounded flex items-center space-x-1"
-                >
-                  <MessageSquare size={16} />
-                </a>
-
-                {/* Edit Button */}
-                <button
-                  onClick={() => {
-                    setEditingLead(lead);
-                    setNewLead({ ...lead });
-                    setShowLeadModal(true);
-                  }}
-                  className="bg-blue-500 text-white px-3 py-1 rounded flex items-center"
-                >
-                  <Edit size={16} />
-                </button>
-
-                {/* Delete Button */}
-                <button
-                  onClick={() => deleteLead(lead.id)}
-                  className="bg-red-500 text-white px-3 py-1 rounded flex items-center"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </td>
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <table className="min-w-full">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Name</th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Vehicle Number</th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Vehicle Model</th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Contact</th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Delivery Date</th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Sales Rep</th>
+              <th className="px-6 py-3 text-center text-sm font-medium text-gray-700">Timer</th>
+              <th className="px-6 py-3 text-center text-sm font-medium text-gray-700">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {leads.map((lead) => (
+              <tr key={lead.id} className="hover:bg-gray-50 transition-all">
+                <td className="px-6 py-4 text-sm text-gray-700">{lead.name}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">{lead.vehicle_number}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">{lead.vehicle_model}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">{lead.contact}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">{lead.delivery_date}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">{lead.sales_rep}</td>
+                <td className="px-6 py-4 text-sm text-center text-gray-700">{formatTimer(timers[lead.id])}</td>
+                <td className="px-6 py-4 text-sm text-center">
+                  <div className="flex space-x-2 justify-center">
+                    {/* Timer Button */}
+                    <button
+                      onClick={() => toggleTimer(lead.id)}
+                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition-all"
+                    >
+                      {running[lead.id] ? <Pause size={16} /> : <Play size={16} />}
+                    </button>
+
+                    {/* Reset Timer Button */}
+                    <button
+                      onClick={() => resetTimer(lead.id)}
+                      className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition-all"
+                    >
+                      <RefreshCw size={16} />
+                    </button>
+
+                    {/* WhatsApp Link */}
+                    <a
+                      href={`https://wa.me/${lead.contact}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition-all flex items-center"
+                    >
+                      <MessageSquare size={16} />
+                    </a>
+
+                    {/* Edit Button */}
+                    <button
+                      onClick={() => {
+                        setEditingLead(lead);
+                        setNewLead({ ...lead });
+                        setShowLeadModal(true);
+                      }}
+                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-all flex items-center"
+                    >
+                      <Edit size={16} />
+                    </button>
+
+                    {/* Delete Button */}
+                    <button
+                      onClick={() => deleteLead(lead.id)}
+                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-all flex items-center"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* Add/Edit Lead Modal */}
       {showLeadModal && (
@@ -261,42 +326,56 @@ const HomePage = () => {
             <input
               type="text"
               placeholder="Name"
-              className="w-full p-2 border rounded mb-2"
+              className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={newLead.name}
               onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
             />
             <input
               type="text"
               placeholder="Contact"
-              className="w-full p-2 border rounded mb-2"
+              className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={newLead.contact}
               onChange={(e) => setNewLead({ ...newLead, contact: e.target.value })}
             />
             <input
               type="text"
               placeholder="Vehicle Number"
-              className="w-full p-2 border rounded mb-2"
+              className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={newLead.vehicle_number}
               onChange={(e) => setNewLead({ ...newLead, vehicle_number: e.target.value })}
             />
             <input
               type="text"
               placeholder="Vehicle Model"
-              className="w-full p-2 border rounded mb-2"
+              className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={newLead.vehicle_model}
               onChange={(e) => setNewLead({ ...newLead, vehicle_model: e.target.value })}
             />
             <input
               type="date"
-              className="w-full p-2 border rounded mb-4"
+              className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={newLead.delivery_date}
               onChange={(e) => setNewLead({ ...newLead, delivery_date: e.target.value })}
             />
 
+            {/* Sales Rep Dropdown */}
+            <select
+              value={newLead.sales_rep}
+              onChange={(e) => setNewLead({ ...newLead, sales_rep: e.target.value })}
+              className="w-full p-2 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Sales Rep</option>
+              {employees.map((employee) => (
+                <option key={employee.id} value={employee.name}>
+                  {employee.name}
+                </option>
+              ))}
+            </select>
+
             {/* Submit Button */}
             <button
               onClick={handleAddOrUpdateLead}
-              className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+              className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-all"
             >
               {editingLead ? "Update Lead" : "Add Lead"}
             </button>
