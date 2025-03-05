@@ -262,14 +262,14 @@ const Sheduled = () => {
         <table className="min-w-full">
           <thead className="bg-gray-100">
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Name</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Vehicle Number</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Vehicle Model</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Contact</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Delivery Date</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Sales Rep</th>
-              <th className="px-6 py-3 text-center text-sm font-medium text-gray-700">Timer</th>
-              <th className="px-6 py-3 text-center text-sm font-medium text-gray-700">Actions</th>
+              <th className="p-3">Name</th>
+              <th className="p-3">Vehicle Number</th>
+              <th className="p-3">Vehicle Model</th>
+              <th className="p-3">Contact</th>
+              <th className="p-3">Delivery Date</th>
+              <th className="p-3">Sales Rep</th>
+              <th className="p-3">Timer</th>
+              <th className="p-3">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
