@@ -123,19 +123,25 @@ const EmployeesPage = () => {
             <nav className="flex space-x-4">
               <button
                 onClick={() => navigate("/leads")}
-                className="text-gray-700 hover:text-blue-500 transition-all"
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/leads" ? "bg-gray-300" : ""
+                }`}
               >
                 Leads
               </button>
               <button
                 onClick={() => navigate("/employees")}
-                className="text-gray-700 hover:text-blue-500 transition-all"
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/employees" ? "bg-gray-300" : ""
+                }`}
               >
                 Employees
               </button>
               <button
                 onClick={() => navigate("/report")}
-                className="text-gray-700 hover:text-blue-500 transition-all"
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/report" ? "bg-gray-300" : ""
+                }`}
               >
                 Reports
               </button>
@@ -147,7 +153,6 @@ const EmployeesPage = () => {
               >
                 Sheduled
               </button>
-              
             </nav>
             <button
               className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"

@@ -284,12 +284,12 @@ const HomePage = () => {
               value={newLead.vehicle_model}
               onChange={(e) => setNewLead({ ...newLead, vehicle_model: e.target.value })}
             />
-            <input
+          {/*}  <input
               type="date"
               className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={newLead.delivery_date}
               onChange={(e) => setNewLead({ ...newLead, delivery_date: e.target.value })}
-            />
+            />*/}
 
             {/* Sales Rep Dropdown with Images */}
             <select
