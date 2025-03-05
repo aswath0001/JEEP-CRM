@@ -5,6 +5,7 @@ import HomePage from "./assets/components/pages/homepage";
 import ProtectedRoute from "./assets/components/protectroute";
 import EmployeesPage from "./assets/components/pages/employeePage";
 import ReportPage from "./assets/components/pages/report";
+import Sheduled from "./assets/components/pages/sheduled";
 
 function App() {
   return (
@@ -35,6 +36,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ReportPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sheduled"
+          element={
+            <ProtectedRoute>
+              <Sheduled />
             </ProtectedRoute>
           }
         />

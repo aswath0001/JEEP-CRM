@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { database } from "../firebase/firebase";
 import { ref, get, set, push, update, remove } from "firebase/database";
-import { MessageSquare, PlusCircle, Edit, Trash2, X, Play, Pause, RefreshCw } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom"; // Import useLocation
+import { PlusCircle, Edit, Trash2, X } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const HomePage = () => {
   const [leads, setLeads] = useState([]);
@@ -13,15 +13,14 @@ const HomePage = () => {
     vehicle_number: "",
     vehicle_model: "",
     delivery_date: "",
-    sales_rep: "", // Added sales_rep field
+    sales_rep: "",
+    status: "", // Add status field
   });
   const [editingLead, setEditingLead] = useState(null);
-  const [timers, setTimers] = useState({});
-  const [running, setRunning] = useState({});
-  const [employees, setEmployees] = useState([]); // State to store employees
+  const [employees, setEmployees] = useState([]);
 
   const navigate = useNavigate();
-  const location = useLocation(); // Get the current route
+  const location = useLocation();
 
   // Fetch leads from Firebase
   useEffect(() => {
@@ -35,18 +34,7 @@ const HomePage = () => {
             id: key,
             ...data[key],
           }));
-
-          const initialTimers = {};
-          const initialRunning = {};
-
-          leadArray.forEach((lead) => {
-            initialTimers[lead.id] = lead.timer || 0;
-            initialRunning[lead.id] = lead.isRunning || false;
-          });
-
           setLeads(leadArray);
-          setTimers(initialTimers);
-          setRunning(initialRunning);
         }
       } catch (error) {
         console.error("Error fetching leads:", error);
@@ -78,69 +66,6 @@ const HomePage = () => {
     fetchEmployees();
   }, []);
 
-  // Timer logic
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimers((prevTimers) => {
-        const updatedTimers = { ...prevTimers };
-
-        Object.keys(running).forEach(async (id) => {
-          if (running[id]) {
-            updatedTimers[id] = (updatedTimers[id] || 0) + 1000;
-
-            // Update Firebase with the new timer value
-            await update(ref(database, `LEAD/${id}`), { timer: updatedTimers[id] });
-          }
-        });
-
-        return updatedTimers;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [running]);
-
-  // Toggle Timer Start/Pause
-  const toggleTimer = async (leadId) => {
-    const isCurrentlyRunning = running[leadId];
-
-    const updatedLeadData = {
-      isRunning: !isCurrentlyRunning,
-      timer: timers[leadId] || 0, // Keep existing timer value
-    };
-
-    setRunning((prev) => ({ ...prev, [leadId]: !isCurrentlyRunning }));
-
-    await update(ref(database, `LEAD/${leadId}`), updatedLeadData);
-  };
-
-  // Reset Timer
-  const resetTimer = async (leadId) => {
-    const updatedLeadData = {
-      timer: 0,
-      isRunning: false,
-    };
-
-    setTimers((prev) => ({ ...prev, [leadId]: 0 }));
-    setRunning((prev) => ({ ...prev, [leadId]: false }));
-
-    await update(ref(database, `LEAD/${leadId}`), updatedLeadData);
-  };
-
-  // Format milliseconds into HH:MM:SS
-  const formatTimer = (milliseconds = 0) => {
-    if (!milliseconds || isNaN(milliseconds)) {
-      milliseconds = 0; // Ensure it starts at 0 if undefined or NaN
-    }
-
-    const totalSeconds = Math.floor(milliseconds / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  };
-
   // Add or update a lead
   const handleAddOrUpdateLead = async () => {
     if (
@@ -149,7 +74,7 @@ const HomePage = () => {
       !newLead.vehicle_number ||
       !newLead.vehicle_model ||
       !newLead.delivery_date ||
-      !newLead.sales_rep // Validate sales_rep field
+      !newLead.sales_rep
     ) {
       alert("All fields are required!");
       return;
@@ -164,8 +89,8 @@ const HomePage = () => {
         setEditingLead(null);
       } else {
         const leadRef = push(ref(database, "LEAD"));
-        await set(leadRef, { ...newLead, timer: 0, isRunning: false });
-        setLeads([...leads, { id: leadRef.key, ...newLead, timer: 0, isRunning: false }]);
+        await set(leadRef, { ...newLead, isRunning: false });
+        setLeads([...leads, { id: leadRef.key, ...newLead, isRunning: false }]);
       }
 
       setShowLeadModal(false);
@@ -175,7 +100,8 @@ const HomePage = () => {
         vehicle_number: "",
         vehicle_model: "",
         delivery_date: "",
-        sales_rep: "", // Reset sales_rep field
+        sales_rep: "",
+        status: "", // Reset status field
       });
     } catch (error) {
       console.error("Error saving lead:", error);
@@ -226,6 +152,14 @@ const HomePage = () => {
               >
                 Reports
               </button>
+              <button
+                onClick={() => navigate("/sheduled")}
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/sheduled" ? "bg-gray-300" : ""
+                }`}
+              >
+                Sheduled
+              </button>
             </nav>
             <button
               className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
@@ -236,7 +170,8 @@ const HomePage = () => {
                   vehicle_number: "",
                   vehicle_model: "",
                   delivery_date: "",
-                  sales_rep: "", // Reset sales_rep field
+                  sales_rep: "",
+                  status: "", // Reset status field
                 });
                 setEditingLead(null);
                 setShowLeadModal(true);
@@ -253,55 +188,29 @@ const HomePage = () => {
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <table className="min-w-full">
           <thead className="bg-gray-100">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Name</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Vehicle Number</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Vehicle Model</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Contact</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Delivery Date</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Sales Rep</th>
-              <th className="px-6 py-3 text-center text-sm font-medium text-gray-700">Timer</th>
-              <th className="px-6 py-3 text-center text-sm font-medium text-gray-700">Actions</th>
+            <tr className="bg-gray-200 text-gray-700">
+              <th className="p-3 text-left w-[15%]">Name</th>
+              <th className="p-3 text-left w-[15%]">Vehicle Number</th>
+              <th className="p-3 text-left w-[15%]">Vehicle Model</th>
+              <th className="p-3 text-left w-[15%]">Contact</th>
+              <th className="p-3 text-left w-[15%]">Testdrive Date</th>
+              <th className="p-3 text-left w-[15%]">Sales Rep</th>
+              <th className="p-3 text-left w-[15%]">Status</th> {/* Add Status column */}
+              <th className="p-3 text-center w-[10%]">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {leads.map((lead) => (
               <tr key={lead.id} className="hover:bg-gray-50 transition-all">
-                <td className="px-6 py-4 text-sm text-gray-700">{lead.name}</td>
-                <td className="px-6 py-4 text-sm text-gray-700">{lead.vehicle_number}</td>
-                <td className="px-6 py-4 text-sm text-gray-700">{lead.vehicle_model}</td>
-                <td className="px-6 py-4 text-sm text-gray-700">{lead.contact}</td>
-                <td className="px-6 py-4 text-sm text-gray-700">{lead.delivery_date}</td>
-                <td className="px-6 py-4 text-sm text-gray-700">{lead.sales_rep}</td>
-                <td className="px-6 py-4 text-sm text-center text-gray-700">{formatTimer(timers[lead.id])}</td>
-                <td className="px-6 py-4 text-sm text-center">
+                <td className="px-6 py-4 text-sm text-gray-700 text-left w-[15%]">{lead.name}</td>
+                <td className="px-6 py-4 text-sm text-gray-700 text-left w-[15%]">{lead.vehicle_number}</td>
+                <td className="px-6 py-4 text-sm text-gray-700 text-left w-[15%]">{lead.vehicle_model}</td>
+                <td className="px-6 py-4 text-sm text-gray-700 text-left w-[15%]">{lead.contact}</td>
+                <td className="px-6 py-4 text-sm text-gray-700 text-left w-[15%]">{lead.delivery_date}</td>
+                <td className="px-6 py-4 text-sm text-gray-700 text-left w-[15%]">{lead.sales_rep}</td>
+                <td className="px-6 py-4 text-sm text-gray-700 text-left w-[15%]">{lead.status}</td> {/* Display Status */}
+                <td className="px-6 py-4 text-sm text-center w-[10%]">
                   <div className="flex space-x-2 justify-center">
-                    {/* Timer Button */}
-                    <button
-                      onClick={() => toggleTimer(lead.id)}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition-all"
-                    >
-                      {running[lead.id] ? <Pause size={16} /> : <Play size={16} />}
-                    </button>
-
-                    {/* Reset Timer Button */}
-                    <button
-                      onClick={() => resetTimer(lead.id)}
-                      className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition-all"
-                    >
-                      <RefreshCw size={16} />
-                    </button>
-
-                    {/* WhatsApp Link */}
-                    <a
-                      href={`https://wa.me/${lead.contact}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition-all flex items-center"
-                    >
-                      <MessageSquare size={16} />
-                    </a>
-
                     {/* Edit Button */}
                     <button
                       onClick={() => {
@@ -382,19 +291,39 @@ const HomePage = () => {
               onChange={(e) => setNewLead({ ...newLead, delivery_date: e.target.value })}
             />
 
-            {/* Sales Rep Dropdown */}
+            {/* Sales Rep Dropdown with Images */}
             <select
               value={newLead.sales_rep}
               onChange={(e) => setNewLead({ ...newLead, sales_rep: e.target.value })}
-              className="w-full p-2 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select Sales Rep</option>
               {employees.map((employee) => (
                 <option key={employee.id} value={employee.name}>
-                  {employee.name}
+                  <div className="flex items-center">
+                    {employee.profilePicture && (
+                      <img
+                        src={employee.profilePicture}
+                        alt={employee.name}
+                        className="w-6 h-6 rounded-full mr-2"
+                      />
+                    )}
+                    {employee.name}
+                  </div>
                 </option>
               ))}
             </select>
+
+            {/* Status Input (only visible when editing) */}
+            {editingLead && (
+              <input
+                type="text"
+                placeholder="Status"
+                className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={newLead.status}
+                onChange={(e) => setNewLead({ ...newLead, status: e.target.value })}
+              />
+            )}
 
             {/* Submit Button */}
             <button

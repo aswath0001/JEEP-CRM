@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { database } from "../firebase/firebase";
-import { ref, get, set, remove, update } from "firebase/database";
+import { ref, get, set, remove } from "firebase/database";
 import { PlusCircle, Trash2, X, Edit } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom"; // Import useLocation
+import { useNavigate } from "react-router-dom";
 
 const EmployeesPage = () => {
   const [employees, setEmployees] = useState([]);
@@ -12,11 +12,11 @@ const EmployeesPage = () => {
     Mobile_no: "",
     Email_id: "",
     Role: "",
+    profilePicture: "",
   });
-  const [editingEmployee, setEditingEmployee] = useState(null); // State to track the employee being edited
+  const [editingEmployee, setEditingEmployee] = useState(null); // Track the employee being edited
 
   const navigate = useNavigate();
-  const location = useLocation(); // Get the current route
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -48,7 +48,9 @@ const EmployeesPage = () => {
       if (editingEmployee) {
         // Update existing employee
         const employeeRef = ref(database, `EMPLOYEE/${editingEmployee.id}`);
-        await update(employeeRef, newEmployee);
+        await set(employeeRef, newEmployee);
+
+        // Update state
         setEmployees((prev) =>
           prev.map((emp) => (emp.id === editingEmployee.id ? { ...emp, ...newEmployee } : emp))
         );
@@ -65,13 +67,17 @@ const EmployeesPage = () => {
 
         const employeeRef = ref(database, `EMPLOYEE/${newId}`);
         await set(employeeRef, { id: newId, ...newEmployee });
+
+        // Update the counter in Firebase
         await set(counterRef, newId);
 
+        // Update state
         setEmployees([...employees, { id: newId, ...newEmployee }]);
       }
 
+      // Reset form and close modal
       setShowEmployeeModal(false);
-      setNewEmployee({ name: "", Mobile_no: "", Email_id: "", Role: "" }); // Reset form
+      setNewEmployee({ name: "", Mobile_no: "", Email_id: "", Role: "", profilePicture: "" });
     } catch (error) {
       console.error("Error saving employee:", error);
     }
@@ -88,9 +94,22 @@ const EmployeesPage = () => {
     }
   };
 
+  // Handle profile picture upload
+  const handleProfilePictureUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewEmployee({ ...newEmployee, profilePicture: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Open modal for editing an employee
   const handleEditEmployee = (employee) => {
     setEditingEmployee(employee); // Set the employee being edited
-    setNewEmployee({ ...employee }); // Populate the form with employee data
+    setNewEmployee({ ...employee }); // Populate the form with the employee's data
     setShowEmployeeModal(true); // Open the modal
   };
 
@@ -104,35 +123,37 @@ const EmployeesPage = () => {
             <nav className="flex space-x-4">
               <button
                 onClick={() => navigate("/leads")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/leads" ? "bg-gray-300" : ""
-                }`}
+                className="text-gray-700 hover:text-blue-500 transition-all"
               >
                 Leads
               </button>
               <button
                 onClick={() => navigate("/employees")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/employees" ? "bg-gray-200" : ""
-                }`}
+                className="text-gray-700 hover:text-blue-500 transition-all"
               >
                 Employees
               </button>
               <button
                 onClick={() => navigate("/report")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/report" ? "bg-gray-200" : ""
-                }`}
+                className="text-gray-700 hover:text-blue-500 transition-all"
               >
                 Reports
               </button>
+              <button
+                onClick={() => navigate("/sheduled")}
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/sheduled" ? "bg-gray-300" : ""
+                }`}
+              >
+                Sheduled
+              </button>
+              
             </nav>
             <button
               className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
               onClick={() => {
                 setEditingEmployee(null); // Clear editing state
-                setNewEmployee({ name: "", Mobile_no: "", Email_id: "", Role: "" }); // Reset form
-                setShowEmployeeModal(true); // Open the modal
+                setShowEmployeeModal(true);
               }}
             >
               <PlusCircle size={20} />
@@ -147,6 +168,7 @@ const EmployeesPage = () => {
         <table className="w-full border-collapse bg-white shadow-lg rounded-lg text-left">
           <thead>
             <tr className="bg-gray-200 text-gray-700">
+              <th className="p-3">Profile</th>
               <th className="p-3">Employee ID</th>
               <th className="p-3">Name</th>
               <th className="p-3">Mobile Number</th>
@@ -158,28 +180,39 @@ const EmployeesPage = () => {
           <tbody>
             {employees.map((emp) => (
               <tr key={emp.id} className="border-b">
+                <td className="p-3">
+                  {emp.profilePicture ? (
+                    <img
+                      src={emp.profilePicture}
+                      alt="Profile"
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+                      <span className="text-gray-600 text-sm">No Image</span>
+                    </div>
+                  )}
+                </td>
                 <td className="p-3">{emp.id}</td>
                 <td className="p-3">{emp.name}</td>
                 <td className="p-3">{emp.Mobile_no}</td>
                 <td className="p-3">{emp.Email_id}</td>
                 <td className="p-3">{emp.Role}</td>
-                <td className="p-3">
-                  <div className="flex space-x-2">
-                    {/* Edit Button */}
-                    <button
-                      onClick={() => handleEditEmployee(emp)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded flex items-center hover:bg-blue-600"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    {/* Delete Button */}
-                    <button
-                      onClick={() => deleteEmployee(emp.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded flex items-center hover:bg-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                <td className="p-3 flex space-x-2">
+                  {/* Edit Button */}
+                  <button
+                    onClick={() => handleEditEmployee(emp)}
+                    className="bg-blue-500 text-white px-3 py-1 rounded flex items-center hover:bg-blue-600"
+                  >
+                    <Edit size={16} />
+                  </button>
+                  {/* Delete Button */}
+                  <button
+                    onClick={() => deleteEmployee(emp.id)}
+                    className="bg-red-500 text-white px-3 py-1 rounded flex items-center hover:bg-red-600"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -224,10 +257,27 @@ const EmployeesPage = () => {
             <input
               type="text"
               placeholder="Role"
-              className="w-full p-2 border rounded mb-4"
+              className="w-full p-2 border rounded mb-2"
               value={newEmployee.Role}
               onChange={(e) => setNewEmployee({ ...newEmployee, Role: e.target.value })}
             />
+            {/* Profile Picture Upload */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Profile Picture</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleProfilePictureUpload}
+                className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+              {newEmployee.profilePicture && (
+                <img
+                  src={newEmployee.profilePicture}
+                  alt="Profile Preview"
+                  className="mt-2 w-20 h-20 rounded-full object-cover"
+                />
+              )}
+            </div>
             <button
               onClick={handleAddOrUpdateEmployee}
               className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"

@@ -62,6 +62,14 @@ const ReportPage = () => {
               >
                 Reports
               </button>
+              <button
+                onClick={() => navigate("/sheduled")}
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/sheduled" ? "bg-gray-300" : ""
+                }`}
+              >
+                Sheduled
+              </button>
             </nav>
           </div>
         </div>

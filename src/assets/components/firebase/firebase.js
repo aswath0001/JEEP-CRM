@@ -1,7 +1,7 @@
 // Import necessary Firebase modules
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getDatabase, ref, get, set, push, update, remove } from "firebase/database";
+import { getDatabase, ref, get, set, push, update, remove, } from "firebase/database";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -30,5 +30,6 @@ export {
     set,
     push,
     update,
+    
     remove
 };
