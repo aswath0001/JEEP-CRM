@@ -175,65 +175,47 @@ const HomePage = () => {
   
     try {
       if (editingLead) {
-        // Updating existing lead
-        const leadRef = doc(db, "LEADS", editingLead.id);
-        await updateDoc(leadRef, newLead);
-  
-        setLeads((prev) =>
-          prev.map((lead) =>
-            lead.id === editingLead.id ? { ...lead, ...newLead } : lead
-          )
-        );
-  
-        // Update assigned employee’s document with the lead ID
-        if (newLead.sales_rep) {
-          const employeeQuerySnapshot = await getDocs(
-            collection(db, "EMPLOYEES")
-          );
-  
-          employeeQuerySnapshot.forEach(async (employeeDoc) => {
-            const employeeData = employeeDoc.data();
-  
-            if (employeeData.name === newLead.sales_rep) {
-              const employeeRef = doc(db, "EMPLOYEES", employeeDoc.id);
-              await updateDoc(employeeRef, {
-                leads: employeeData.leads
-                  ? [...employeeData.leads, editingLead.id]
-                  : [editingLead.id],
-              });
-            }
+        // If editing, check if delivery_date is provided
+        if (newLead.delivery_date) {
+          // Copy the lead to the Sheduled collection
+          const sheduledRef = collection(db, "Sheduled");
+          await addDoc(sheduledRef, {
+            ...newLead,
+            isRunning: false,
+            timer: 0, // Initialize timer
+            status: "scheduled", // Set status to scheduled
           });
-        }
   
+          // Update the lead in the LEADS collection (without deleting it)
+          const leadRef = doc(db, "LEADS", editingLead.id);
+          await updateDoc(leadRef, newLead);
+  
+          // Update local state
+          setLeads((prev) =>
+            prev.map((lead) =>
+              lead.id === editingLead.id ? { ...lead, ...newLead } : lead
+            )
+          );
+        } else {
+          // Update the lead in the LEADS collection
+          const leadRef = doc(db, "LEADS", editingLead.id);
+          await updateDoc(leadRef, newLead);
+  
+          setLeads((prev) =>
+            prev.map((lead) =>
+              lead.id === editingLead.id ? { ...lead, ...newLead } : lead
+            )
+          );
+        }
         setEditingLead(null);
       } else {
-        // Adding new lead
+        // Add a new lead to the LEADS collection
         const leadRef = await addDoc(collection(db, "LEADS"), {
           ...newLead,
           isRunning: false,
         });
   
         setLeads([...leads, { id: leadRef.id, ...newLead, isRunning: false }]);
-  
-        // Assign lead to employee
-        if (newLead.sales_rep) {
-          const employeeQuerySnapshot = await getDocs(
-            collection(db, "EMPLOYEES")
-          );
-  
-          employeeQuerySnapshot.forEach(async (employeeDoc) => {
-            const employeeData = employeeDoc.data();
-  
-            if (employeeData.name === newLead.sales_rep) {
-              const employeeRef = doc(db, "EMPLOYEES", employeeDoc.id);
-              await updateDoc(employeeRef, {
-                leads: employeeData.leads
-                  ? [...employeeData.leads, leadRef.id]
-                  : [leadRef.id],
-              });
-            }
-          });
-        }
       }
   
       // Reset modal & form
@@ -251,7 +233,6 @@ const HomePage = () => {
       console.error("Error saving lead:", error);
     }
   };
-
   // ✅ Delete a lead from Firestore
   const deleteLead = async (leadId) => {
     if (window.confirm("Are you sure you want to delete this lead?")) {
