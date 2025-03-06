@@ -1,42 +1,69 @@
 import React, { useState, useEffect } from "react";
-import { database } from "../firebase/firebase";
-import { ref, get, update, remove, push, set } from "firebase/database";
-import { MessageSquare, PlusCircle, Edit, Trash2, X, Play, Pause, RefreshCw } from "lucide-react";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  addDoc,
+  onSnapshot,
+} from "firebase/firestore";
+import { db, auth } from "../firebase/firebase"; // Ensure Firestore is initialized in your firebase config
+import { MessageSquare, Play, Pause, RefreshCw, Trash2 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
 const Sheduled = () => {
   const [leads, setLeads] = useState([]);
   const [timers, setTimers] = useState({});
   const [running, setRunning] = useState({});
+  const [startTimes, setStartTimes] = useState({});
+  const [userRole, setUserRole] = useState();
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Fetch leads from Firebase
+  // Fetch user role
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const userRef = doc(db, "users", user.uid); // Assuming roles are stored in a "users" collection
+        getDoc(userRef).then((docSnapshot) => {
+          if (docSnapshot.exists()) {
+            const userData = docSnapshot.data();
+            setUserRole(userData.role === "admin");
+          }
+        });
+      } else {
+        setUserRole(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch leads from Firestore
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const leadRef = ref(database, "Sheduled");
-        const snapshot = await get(leadRef);
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          const leadArray = Object.keys(data).map((key) => ({
-            id: key,
-            ...data[key],
-          }));
+        const querySnapshot = await getDocs(collection(db, "Sheduled"));
+        const leadArray = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-          const initialTimers = {};
-          const initialRunning = {};
+        const initialTimers = {};
+        const initialRunning = {};
 
-          leadArray.forEach((lead) => {
-            initialTimers[lead.id] = lead.timer || 0;
-            initialRunning[lead.id] = lead.isRunning || false;
-          });
+        leadArray.forEach((lead) => {
+          initialTimers[lead.id] = lead.timer || 0;
+          initialRunning[lead.id] = lead.isRunning || false;
+        });
 
-          setLeads(leadArray);
-          setTimers(initialTimers);
-          setRunning(initialRunning);
-        }
+        setLeads(leadArray);
+        setTimers(initialTimers);
+        setRunning(initialRunning);
       } catch (error) {
         console.error("Error fetching leads:", error);
       }
@@ -55,8 +82,9 @@ const Sheduled = () => {
           if (running[id]) {
             updatedTimers[id] = (updatedTimers[id] || 0) + 1000;
 
-            // Update Firebase with the new timer value
-            await update(ref(database, `Sheduled/${id}`), { timer: updatedTimers[id] });
+            // Update Firestore with the new timer value
+            const leadRef = doc(db, "Sheduled", id);
+            await updateDoc(leadRef, { timer: updatedTimers[id] });
           }
         });
 
@@ -67,36 +95,33 @@ const Sheduled = () => {
     return () => clearInterval(interval);
   }, [running]);
 
+  // Toggle timer (start/stop)
   const toggleTimer = async (leadId) => {
     const isCurrentlyRunning = running[leadId];
-  
-    const updatedLeadData = {
-      isRunning: !isCurrentlyRunning,
-      timer: timers[leadId] || 0,
-    };
-  
-    setRunning((prev) => ({ ...prev, [leadId]: !isCurrentlyRunning }));
-  
-    await update(ref(database, `Sheduled/${leadId}`), updatedLeadData);
-  
-    // If the timer is stopped, move the lead to the Completed node
+
     if (isCurrentlyRunning) {
+      // Stop the timer
+      const stopTime = new Date().getTime();
+      const startTime = startTimes[leadId];
+      const totalTime = stopTime - startTime;
+
+      // Move the lead to the Completed collection
       const lead = leads.find((lead) => lead.id === leadId);
       if (lead) {
         const completedLead = {
-          name: lead.name,
-          contact: lead.contact,
-          timer: formatTimer(timers[leadId]),
+          ...lead,
+          timer: totalTime,
+          startTime: new Date(startTime).toISOString(),
+          endTime: new Date(stopTime).toISOString(),
         };
-  
+
         try {
-          // Add to Completed node
-          const completedRef = push(ref(database, "Completed")); // Use push to create a new child node
-          await set(completedRef, completedLead); // Set the data for the new child node
-  
-          // Remove from Sheduled node
-          await remove(ref(database, `Sheduled/${leadId}`));
-  
+          // Add to Completed collection
+          await addDoc(collection(db, "Completed"), completedLead);
+
+          // Remove from Sheduled collection
+          await deleteDoc(doc(db, "Sheduled", leadId));
+
           // Update local state
           setLeads((prev) => prev.filter((lead) => lead.id !== leadId));
           setTimers((prev) => {
@@ -109,12 +134,30 @@ const Sheduled = () => {
             delete updatedRunning[leadId];
             return updatedRunning;
           });
-  
+          setStartTimes((prev) => {
+            const updatedStartTimes = { ...prev };
+            delete updatedStartTimes[leadId];
+            return updatedStartTimes;
+          });
+
           console.log("Lead moved to Completed:", completedLead);
         } catch (error) {
           console.error("Error moving lead to Completed:", error);
         }
       }
+    } else {
+      // Start the timer
+      const startTime = new Date().getTime();
+      setStartTimes((prev) => ({ ...prev, [leadId]: startTime }));
+
+      const updatedLeadData = {
+        isRunning: true,
+        startTime: new Date(startTime).toISOString(),
+      };
+
+      setRunning((prev) => ({ ...prev, [leadId]: true }));
+      const leadRef = doc(db, "Sheduled", leadId);
+      await updateDoc(leadRef, updatedLeadData);
     }
   };
 
@@ -127,8 +170,14 @@ const Sheduled = () => {
 
     setTimers((prev) => ({ ...prev, [leadId]: 0 }));
     setRunning((prev) => ({ ...prev, [leadId]: false }));
+    setStartTimes((prev) => {
+      const updatedStartTimes = { ...prev };
+      delete updatedStartTimes[leadId];
+      return updatedStartTimes;
+    });
 
-    await update(ref(database, `Sheduled/${leadId}`), updatedLeadData);
+    const leadRef = doc(db, "Sheduled", leadId);
+    await updateDoc(leadRef, updatedLeadData);
   };
 
   // Format milliseconds into HH:MM:SS
@@ -149,7 +198,7 @@ const Sheduled = () => {
   const deleteLead = async (leadId) => {
     if (window.confirm("Are you sure you want to delete this lead?")) {
       try {
-        await remove(ref(database, `Sheduled/${leadId}`));
+        await deleteDoc(doc(db, "Sheduled", leadId));
         setLeads((prev) => prev.filter((lead) => lead.id !== leadId));
       } catch (error) {
         console.error("Error deleting lead:", error);
@@ -157,10 +206,20 @@ const Sheduled = () => {
     }
   };
 
+  // Logout Function
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
   return (
-    <div className="flex flex-col min-h-screen p-6 font-poppins bg-gray-50">
-      {/* Navigation Bar */}
-      <div className="bg-white shadow-sm mb-6">
+    <div className="flex flex-col min-h-screen p-6 pt-24 font-poppins bg-gray-50">
+    {/* Navigation Bar */}
+    <div className="bg-white shadow-sm fixed top-0 left-0 w-full z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-gray-800">Sheduled Leads</h2>
@@ -173,22 +232,26 @@ const Sheduled = () => {
               >
                 Leads
               </button>
-              <button
-                onClick={() => navigate("/employees")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/employees" ? "bg-gray-300" : ""
-                }`}
-              >
-                Employees
-              </button>
-              <button
-                onClick={() => navigate("/report")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/report" ? "bg-gray-300" : ""
-                }`}
-              >
-                Reports
-              </button>
+              {userRole && (
+                <button
+                  onClick={() => navigate("/employees")}
+                  className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                    location.pathname === "/employees" ? "bg-gray-300" : ""
+                  }`}
+                >
+                  Employees
+                </button>
+              )}
+              {userRole && (
+                <button
+                  onClick={() => navigate("/report")}
+                  className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                    location.pathname === "/report" ? "bg-gray-300" : ""
+                  }`}
+                >
+                  Reports
+                </button>
+              )}
               <button
                 onClick={() => navigate("/sheduled")}
                 className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
@@ -204,6 +267,12 @@ const Sheduled = () => {
                 }`}
               >
                 Completed
+              </button>
+              <button
+                className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+                onClick={handleLogout}
+              >
+                <span>Logout</span>
               </button>
             </nav>
           </div>

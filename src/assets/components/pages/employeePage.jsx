@@ -1,8 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { database } from "../firebase/firebase";
 import { ref, get, set, remove } from "firebase/database";
 import { PlusCircle, Trash2, X, Edit } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  db,
+  onAuthStateChanged,
+  auth,
+} from "../firebase/firebase";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 
 const EmployeesPage = () => {
   const [employees, setEmployees] = useState([]);
@@ -11,6 +24,7 @@ const EmployeesPage = () => {
     name: "",
     Mobile_no: "",
     Email_id: "",
+    password: "",
     Role: "",
     profilePicture: "",
   });
@@ -21,13 +35,13 @@ const EmployeesPage = () => {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const employeeRef = ref(database, "EMPLOYEE");
-        const snapshot = await get(employeeRef);
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          const employeeArray = Object.keys(data).map((key) => ({
-            id: key,
-            ...data[key],
+        const employeeRef = collection(db, "EMPLOYEES"); // Firestore collection reference
+        const snapshot = await getDocs(employeeRef);
+  
+        if (!snapshot.empty) {
+          const employeeArray = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
           }));
           setEmployees(employeeArray);
         }
@@ -35,49 +49,78 @@ const EmployeesPage = () => {
         console.error("Error fetching employees:", error);
       }
     };
+  
     fetchEmployees();
   }, []);
-
   const handleAddOrUpdateEmployee = async () => {
-    if (!newEmployee.name || !newEmployee.Mobile_no || !newEmployee.Email_id || !newEmployee.Role) {
+    if (
+      !newEmployee.name ||
+      !newEmployee.Mobile_no ||
+      !newEmployee.Email_id ||
+      !newEmployee.password ||
+      !newEmployee.Role ||
+      !newEmployee.profilePicture
+    ) {
       alert("All fields are required!");
       return;
     }
-
+  
     try {
       if (editingEmployee) {
-        // Update existing employee
-        const employeeRef = ref(database, `EMPLOYEE/${editingEmployee.id}`);
-        await set(employeeRef, newEmployee);
-
+        // Update existing employee in Firestore
+        const employeeRef = doc(db, "EMPLOYEES", editingEmployee.id);
+        await setDoc(
+          employeeRef,
+          {
+            name: newEmployee.name,
+            Mobile_no: newEmployee.Mobile_no,
+            Role: newEmployee.Role,
+            profilePicture: newEmployee.profilePicture,
+            leads: editingEmployee.leads || [], // Preserve existing leads
+          },
+          { merge: true }
+        );
+  
         // Update state
         setEmployees((prev) =>
-          prev.map((emp) => (emp.id === editingEmployee.id ? { ...emp, ...newEmployee } : emp))
+          prev.map((emp) =>
+            emp.id === editingEmployee.id ? { ...emp, ...newEmployee } : emp
+          )
         );
         setEditingEmployee(null); // Clear editing state
       } else {
-        // Add new employee
-        const counterRef = ref(database, "EMPLOYEE_COUNTER");
-        const counterSnapshot = await get(counterRef);
-
-        let newId = 1; // Default first ID
-        if (counterSnapshot.exists()) {
-          newId = counterSnapshot.val() + 1;
-        }
-
-        const employeeRef = ref(database, `EMPLOYEE/${newId}`);
-        await set(employeeRef, { id: newId, ...newEmployee });
-
-        // Update the counter in Firebase
-        await set(counterRef, newId);
-
+        // Create a new account in Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          newEmployee.Email_id,
+          newEmployee.password
+        );
+        const user = userCredential.user;
+  
+        // Store employee details in Firestore using UID
+        const employeeRef = doc(db, "EMPLOYEES", user.uid);
+        await setDoc(employeeRef, {
+          name: newEmployee.name,
+          Mobile_no: newEmployee.Mobile_no,
+          Role: newEmployee.Role,
+          profilePicture: newEmployee.profilePicture,
+          leads: [], // Empty array for leads
+        });
+  
         // Update state
-        setEmployees([...employees, { id: newId, ...newEmployee }]);
+        setEmployees([...employees, { id: user.uid, ...newEmployee, leads: [] }]);
       }
-
+  
       // Reset form and close modal
       setShowEmployeeModal(false);
-      setNewEmployee({ name: "", Mobile_no: "", Email_id: "", Role: "", profilePicture: "" });
+      setNewEmployee({
+        name: "",
+        Mobile_no: "",
+        Email_id: "",
+        password: "",
+        Role: "",
+        profilePicture: "",
+      });
     } catch (error) {
       console.error("Error saving employee:", error);
     }
@@ -86,7 +129,7 @@ const EmployeesPage = () => {
   const deleteEmployee = async (employeeId) => {
     if (window.confirm("Are you sure you want to delete this employee?")) {
       try {
-        await remove(ref(database, `EMPLOYEE/${employeeId}`));
+        await remove(ref(db, `EMPLOYEE/${employeeId}`));
         setEmployees((prev) => prev.filter((emp) => emp.id !== employeeId));
       } catch (error) {
         console.error("Error deleting employee:", error);
@@ -112,11 +155,19 @@ const EmployeesPage = () => {
     setNewEmployee({ ...employee }); // Populate the form with the employee's data
     setShowEmployeeModal(true); // Open the modal
   };
+  const handleLogout = async () => {
+    try {
+      await signOut(auth); // Sign out the user
+      navigate("/login"); // Redirect to the login page or any other page
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
 
   return (
-    <div className="flex flex-col min-h-screen p-6 font-poppins">
+    <div className="flex flex-col min-h-screen p-6 pt-24 font-poppins bg-gray-50">
       {/* Navigation Bar */}
-      <div className="bg-white shadow-sm mb-6">
+      <div className="bg-white shadow-sm fixed top-0 left-0 w-full z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-gray-800">Employees</h2>
@@ -152,6 +203,20 @@ const EmployeesPage = () => {
                 }`}
               >
                 Sheduled
+              </button>
+              <button
+                onClick={() => navigate("/completed")}
+                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === "/completed" ? "bg-gray-300" : ""
+                }`}
+              >
+                Completed
+              </button>
+              <button
+                className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+                onClick={handleLogout}
+              >
+                <span>Logout</span>
               </button>
             </nav>
             <button
@@ -246,7 +311,7 @@ const EmployeesPage = () => {
               onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
             />
             <input
-              type="text"
+              type="tel"
               placeholder="Mobile Number"
               className="w-full p-2 border rounded mb-2"
               value={newEmployee.Mobile_no}
@@ -258,6 +323,13 @@ const EmployeesPage = () => {
               className="w-full p-2 border rounded mb-2"
               value={newEmployee.Email_id}
               onChange={(e) => setNewEmployee({ ...newEmployee, Email_id: e.target.value })}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              className="w-full p-2 border rounded mb-2"
+              value={newEmployee.password}
+              onChange={(e) => setNewEmployee({ ...newEmployee, password: e.target.value })}
             />
             <input
               type="text"

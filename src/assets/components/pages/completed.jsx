@@ -2,13 +2,49 @@ import React, { useState, useEffect } from "react";
 import { database } from "../firebase/firebase";
 import { ref, get } from "firebase/database";
 import { useNavigate, useLocation } from "react-router-dom";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  db,
+  onAuthStateChanged,
+  auth,
+} from "../firebase/firebase";
 
 const Completed = () => {
   const [completedLeads, setCompletedLeads] = useState([]);
+ const [userRole, setUserRole] = useState();
 
   const navigate = useNavigate();
   const location = useLocation();
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Fetch user role from Firestore
+        const userRef = doc(db, "role", user.uid);
+        getDoc(userRef).then((docSnapshot) => {
+          if (docSnapshot.exists()) {
+            const userData = docSnapshot.data();
+            // console.log(userData);
+
+            setUserRole(userData.role === "admin"); // Assuming role is stored in 'role' field
+          }
+        });
+      } else {
+        setUserRole(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  console.log(userRole);
   // Fetch completed leads from Firebase
   useEffect(() => {
     const fetchCompletedLeads = async () => {
@@ -33,11 +69,19 @@ const Completed = () => {
   
     fetchCompletedLeads();
   }, []);
+  const handleLogout = async () => {
+    try {
+      await signOut(auth); // Sign out the user
+      navigate("/login"); // Redirect to the login page or any other page
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
 
   return (
-    <div className="flex flex-col min-h-screen p-6 font-poppins bg-gray-50">
+    <div className="flex flex-col min-h-screen p-6 pt-24 font-poppins bg-gray-50">
       {/* Navigation Bar */}
-      <div className="bg-white shadow-sm mb-6">
+      <div className="bg-white shadow-sm fixed top-0 left-0 w-full z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-gray-800">Completed Leads</h2>
@@ -50,6 +94,7 @@ const Completed = () => {
               >
                 Leads
               </button>
+              {userRole && (
               <button
                 onClick={() => navigate("/employees")}
                 className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
@@ -57,7 +102,8 @@ const Completed = () => {
                 }`}
               >
                 Employees
-              </button>
+              </button>)}
+              {userRole && (
               <button
                 onClick={() => navigate("/report")}
                 className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
@@ -65,7 +111,7 @@ const Completed = () => {
                 }`}
               >
                 Reports
-              </button>
+              </button>)}
               <button
                 onClick={() => navigate("/sheduled")}
                 className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
@@ -81,6 +127,12 @@ const Completed = () => {
                 }`}
               >
                 Completed
+              </button>
+              <button
+                className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+                onClick={handleLogout}
+              >
+                <span>Logout</span>
               </button>
             </nav>
           </div>

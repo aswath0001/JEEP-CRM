@@ -1,7 +1,8 @@
 // Import necessary Firebase modules
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getDatabase, ref, get, set, push, update, remove, } from "firebase/database";
+import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, getFirestore } from "firebase/firestore";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -19,7 +20,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app); // Firebase Authentication
 const database = getDatabase(app); // Realtime Database
-
+const db = getFirestore(app);
 // Export Firebase services and Realtime Database functions
 export {
     app,
@@ -30,6 +31,16 @@ export {
     set,
     push,
     update,
-    
-    remove
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    setDoc,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    remove,
+    db,
+    getFirestore,
+    onAuthStateChanged
 };
