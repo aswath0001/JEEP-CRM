@@ -167,7 +167,6 @@ const HomePage = () => {
       !newLead.contact ||
       !newLead.vehicle_number ||
       !newLead.vehicle_model ||
-      !newLead.delivery_date ||
       !newLead.sales_rep
     ) {
       alert("All fields are required!");

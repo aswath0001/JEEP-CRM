@@ -129,8 +129,8 @@ const EmployeesPage = () => {
   const deleteEmployee = async (employeeId) => {
     if (window.confirm("Are you sure you want to delete this employee?")) {
       try {
-        await remove(ref(db, `EMPLOYEE/${employeeId}`));
-        setEmployees((prev) => prev.filter((emp) => emp.id !== employeeId));
+        await deleteDoc(doc(db, "EMPLOYEE", employeeId)); // Deleting from Firestore
+        setEmployees((prev) => prev.filter((emp) => emp.id !== employeeId)); // Updating local state
       } catch (error) {
         console.error("Error deleting employee:", error);
       }
