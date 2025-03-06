@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { PlusCircle, Edit, Trash2, X } from "lucide-react";
+import { PlusCircle, Edit, Trash2, X, Phone } from "lucide-react"; // Import Phone icon
 import {
   getAuth,
   onAuthStateChanged,
-  signOut
+  signOut,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -15,7 +15,7 @@ import {
   setDoc,
   addDoc,
   updateDoc,
-  deleteDoc
+  deleteDoc,
 } from "firebase/firestore";
 
 // Initialize Firebase services
@@ -32,19 +32,27 @@ const HomePage = () => {
     vehicle_model: "",
     delivery_date: "",
     sales_rep: "",
-    status: "", // Add status field
+    status: "",
   });
+  const [editingLead, setEditingLead] = useState(null);
+  const [employees, setEmployees] = useState([]);
+  const [userRole, setUserRole] = useState();
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // ✅ Fetch user role from Firestore
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
           const userRef = doc(db, "EMPLOYEES", user.uid);
           const docSnapshot = await getDoc(userRef);
-  
+
           if (docSnapshot.exists()) {
             const userData = docSnapshot.data();
             setUserRole(userData.Role?.toLowerCase() === "employee");
-  
+
             if (userData.Role?.toLowerCase() === "employee" && userData.leads) {
               // Fetch assigned leads
               const assignedLeads = [];
@@ -68,58 +76,15 @@ const HomePage = () => {
         setUserRole(false);
       }
     });
-  
+
     return () => unsubscribe();
   }, []);
-  
-  const [editingLead, setEditingLead] = useState(null);
-  const [employees, setEmployees] = useState([]);
-  const [userRole, setUserRole] = useState();
-
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // ✅ Fetch user role from Firestore
-  useEffect(() => {
-    // Listen for authentication state changes
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          // Reference to the user's document in Firestore
-          const userRef = doc(db, "EMPLOYEES", user.uid);
-          const docSnapshot = await getDoc(userRef);
-  
-          if (docSnapshot.exists()) {
-            const userData = docSnapshot.data();
-            console.log("User Data:", userData);
-  
-            // Check if 'Role' exists and is equal to "employee"
-            setUserRole(userData.Role?.toLowerCase() === "employee");
-          } else {
-            console.warn("User document does not exist in Firestore.");
-            setUserRole(false);
-          }
-        } catch (error) {
-          console.error("Error fetching user role:", error);
-          setUserRole(false);
-        }
-      } else {
-        setUserRole(false);
-      }
-    });
-  
-    // Cleanup the listener when component unmounts
-    return () => unsubscribe();
-  }, []);
-  
-  console.log(userRole);
-  
 
   // ✅ Fetch leads from Firestore
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const leadRef = collection(db, "LEADS"); // Firestore collection reference
+        const leadRef = collection(db, "LEADS");
         const snapshot = await getDocs(leadRef);
 
         if (!snapshot.empty) {
@@ -137,13 +102,11 @@ const HomePage = () => {
     fetchLeads();
   }, []);
 
-
-
   // ✅ Fetch employees from Firestore
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const employeeRef = collection(db, "EMPLOYEES"); // Firestore collection reference
+        const employeeRef = collection(db, "EMPLOYEES");
         const snapshot = await getDocs(employeeRef);
 
         if (!snapshot.empty) {
@@ -161,6 +124,7 @@ const HomePage = () => {
     fetchEmployees();
   }, []);
 
+  // ✅ Add or update a lead in Firestore
   const handleAddOrUpdateLead = async () => {
     if (
       !newLead.name ||
@@ -172,7 +136,7 @@ const HomePage = () => {
       alert("All fields are required!");
       return;
     }
-  
+
     try {
       if (editingLead) {
         // If editing, check if delivery_date is provided
@@ -185,11 +149,11 @@ const HomePage = () => {
             timer: 0, // Initialize timer
             status: "scheduled", // Set status to scheduled
           });
-  
+
           // Update the lead in the LEADS collection (without deleting it)
           const leadRef = doc(db, "LEADS", editingLead.id);
           await updateDoc(leadRef, newLead);
-  
+
           // Update local state
           setLeads((prev) =>
             prev.map((lead) =>
@@ -200,7 +164,7 @@ const HomePage = () => {
           // Update the lead in the LEADS collection
           const leadRef = doc(db, "LEADS", editingLead.id);
           await updateDoc(leadRef, newLead);
-  
+
           setLeads((prev) =>
             prev.map((lead) =>
               lead.id === editingLead.id ? { ...lead, ...newLead } : lead
@@ -214,10 +178,10 @@ const HomePage = () => {
           ...newLead,
           isRunning: false,
         });
-  
+
         setLeads([...leads, { id: leadRef.id, ...newLead, isRunning: false }]);
       }
-  
+
       // Reset modal & form
       setShowLeadModal(false);
       setNewLead({
@@ -233,6 +197,7 @@ const HomePage = () => {
       console.error("Error saving lead:", error);
     }
   };
+
   // ✅ Delete a lead from Firestore
   const deleteLead = async (leadId) => {
     if (window.confirm("Are you sure you want to delete this lead?")) {
@@ -246,14 +211,17 @@ const HomePage = () => {
       }
     }
   };
+
+  // ✅ Logout Function
   const handleLogout = async () => {
     try {
-      await signOut(auth); // Sign out the user
-      navigate("/login"); // Redirect to the login page or any other page
+      await signOut(auth);
+      navigate("/login");
     } catch (error) {
       console.error("Error logging out:", error);
     }
   };
+
   return (
     <div className="flex flex-col min-h-screen p-6 pt-24 font-poppins bg-gray-50">
       {/* Navigation Bar */}
@@ -271,24 +239,24 @@ const HomePage = () => {
                 Leads
               </button>
               {!userRole && (
-              <button
-                onClick={() => navigate("/employees")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/employees" ? "bg-gray-300" : ""
-                }`}
-              >
-                Employees
-              </button>
+                <button
+                  onClick={() => navigate("/employees")}
+                  className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                    location.pathname === "/employees" ? "bg-gray-300" : ""
+                  }`}
+                >
+                  Employees
+                </button>
               )}
               {!userRole && (
-              <button
-                onClick={() => navigate("/report")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/report" ? "bg-gray-300" : ""
-                }`}
-              >
-                Reports
-              </button>
+                <button
+                  onClick={() => navigate("/report")}
+                  className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                    location.pathname === "/report" ? "bg-gray-300" : ""
+                  }`}
+                >
+                  Reports
+                </button>
               )}
               <button
                 onClick={() => navigate("/sheduled")}
@@ -296,7 +264,7 @@ const HomePage = () => {
                   location.pathname === "/sheduled" ? "bg-gray-300" : ""
                 }`}
               >
-                Sheduled
+                Scheduled
               </button>
               <button
                 onClick={() => navigate("/completed")}
@@ -306,41 +274,40 @@ const HomePage = () => {
               >
                 Completed
               </button>
-             
             </nav>
             {!userRole && (
-  <button
-    className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
-    onClick={() => {
-      setNewLead({
-        name: "",
-        contact: "",
-        vehicle_number: "",
-        vehicle_model: "",
-        delivery_date: "",
-        sales_rep: "",
-        status: "", // Reset status field
-      });
-      setEditingLead(null);
-      setShowLeadModal(true);
-    }}
-  >
-    <PlusCircle size={20} />
-    <span>Add Lead</span>
-  </button>
-)}
-             <button
-                className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
-                onClick={handleLogout}
+              <button
+                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
+                onClick={() => {
+                  setNewLead({
+                    name: "",
+                    contact: "",
+                    vehicle_number: "",
+                    vehicle_model: "",
+                    delivery_date: "",
+                    sales_rep: "",
+                    status: "",
+                  });
+                  setEditingLead(null);
+                  setShowLeadModal(true);
+                }}
               >
-                <span>Logout</span>
+                <PlusCircle size={20} />
+                <span>Add Lead</span>
               </button>
+            )}
+            <button
+              className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+              onClick={handleLogout}
+            >
+              <span>Logout</span>
+            </button>
           </div>
         </div>
       </div>
 
       {/* Leads Table */}
-      <div className="mt=6 overflow-x-auto">
+      <div className="mt-6 overflow-x-auto">
         <table className="w-full border-collapse bg-white shadow-lg rounded-lg text-left">
           <thead className="bg-gray-100">
             <tr className="bg-gray-200 text-gray-700">
@@ -350,8 +317,7 @@ const HomePage = () => {
               <th className="p-3 text-left w-[15%]">Contact</th>
               <th className="p-3 text-left w-[15%]">Testdrive Date</th>
               <th className="p-3 text-left w-[15%]">Sales Rep</th>
-              <th className="p-3 text-left w-[15%]">Status</th>{" "}
-              {/* Add Status column */}
+              <th className="p-3 text-left w-[15%]">Status</th>
               <th className="p-3 text-center w-[10%]">Actions</th>
             </tr>
           </thead>
@@ -378,10 +344,17 @@ const HomePage = () => {
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-700 text-left w-[15%]">
                   {lead.status}
-                </td>{" "}
-                {/* Display Status */}
+                </td>
                 <td className="px-6 py-4 text-sm text-center w-[10%]">
                   <div className="flex space-x-2 justify-center">
+                    {/* Call Button */}
+                    <a
+                      href={`tel:${lead.contact}`}
+                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition-all flex items-center"
+                    >
+                      <Phone size={16} />
+                    </a>
+
                     {/* Edit Button */}
                     <button
                       onClick={() => {
