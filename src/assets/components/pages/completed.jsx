@@ -94,7 +94,7 @@ const Completed = () => {
               >
                 Leads
               </button>
-              {userRole && (
+              {!userRole && (
               <button
                 onClick={() => navigate("/employees")}
                 className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
@@ -103,7 +103,7 @@ const Completed = () => {
               >
                 Employees
               </button>)}
-              {userRole && (
+              {!userRole && (
               <button
                 onClick={() => navigate("/report")}
                 className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
