@@ -43,34 +43,31 @@ const Sheduled = () => {
     return () => unsubscribe();
   }, []);
 
-  // Fetch leads from Firestore
-  useEffect(() => {
-    const fetchLeads = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "Sheduled"));
-        const leadArray = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
+ // Fetch scheduled leads from Firebase
+useEffect(() => {
+  const fetchScheduledLeads = async () => {
+    try {
+      const scheduledRef = ref(database, "Sheduled"); // Assuming "Sheduled" is your Firebase node
+      const snapshot = await get(scheduledRef);
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        console.log("Fetched scheduled leads:", data); // Debugging
+        const scheduledArray = Object.keys(data).map((key) => ({
+          id: key,
+          ...data[key],
         }));
-
-        const initialTimers = {};
-        const initialRunning = {};
-
-        leadArray.forEach((lead) => {
-          initialTimers[lead.id] = lead.timer || 0;
-          initialRunning[lead.id] = lead.isRunning || false;
-        });
-
-        setLeads(leadArray);
-        setTimers(initialTimers);
-        setRunning(initialRunning);
-      } catch (error) {
-        console.error("Error fetching leads:", error);
+        setScheduledLeads(scheduledArray);
+      } else {
+        console.log("No scheduled leads found."); // Debugging
       }
-    };
+    } catch (error) {
+      console.error("Error fetching scheduled leads:", error);
+    }
+  };
 
-    fetchLeads();
-  }, []);
+  fetchScheduledLeads();
+}, []);
+
 
   // Timer logic
   useEffect(() => {

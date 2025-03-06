@@ -221,7 +221,11 @@ const HomePage = () => {
       console.error("Error logging out:", error);
     }
   };
-
+  const employeeOptions = employees.map((employee) => ({
+    value: employee.name,
+    label: employee.name,
+    profilePicture: employee.profilePicture,
+  }));
   return (
     <div className="flex flex-col min-h-screen p-6 pt-24 font-poppins bg-gray-50">
       {/* Navigation Bar */}
@@ -275,27 +279,6 @@ const HomePage = () => {
                 Completed
               </button>
             </nav>
-            {!userRole && (
-              <button
-                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
-                onClick={() => {
-                  setNewLead({
-                    name: "",
-                    contact: "",
-                    vehicle_number: "",
-                    vehicle_model: "",
-                    delivery_date: "",
-                    sales_rep: "",
-                    status: "",
-                  });
-                  setEditingLead(null);
-                  setShowLeadModal(true);
-                }}
-              >
-                <PlusCircle size={20} />
-                <span>Add Lead</span>
-              </button>
-            )}
             <button
               className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
               onClick={handleLogout}
@@ -381,7 +364,27 @@ const HomePage = () => {
           </tbody>
         </table>
       </div>
-
+           {/* Floating Add Lead Button */}
+      {!userRole && (
+        <button
+          className="fixed bottom-8 right-8 bg-green-600 text-white rounded-full p-4 shadow-lg hover:bg-green-700 transition-all"
+          onClick={() => {
+            setNewLead({
+              name: "",
+              contact: "",
+              vehicle_number: "",
+              vehicle_model: "",
+              delivery_date: "",
+              sales_rep: "",
+              status: "",
+            });
+            setEditingLead(null);
+            setShowLeadModal(true);
+          }}
+        >
+          <PlusCircle size={24} />
+        </button>
+      )}
       {/* Add/Edit Lead Modal */}
       {showLeadModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
@@ -408,7 +411,7 @@ const HomePage = () => {
               onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
             />
             <input
-              type="text"
+              type="number"
               placeholder="Contact"
               className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={newLead.contact}
@@ -417,23 +420,25 @@ const HomePage = () => {
               }
             />
             <input
-              type="text"
-              placeholder="Vehicle Number"
-              className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={newLead.vehicle_number}
-              onChange={(e) =>
-                setNewLead({ ...newLead, vehicle_number: e.target.value })
-              }
-            />
-            <input
-              type="text"
-              placeholder="Vehicle Model"
-              className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={newLead.vehicle_model}
-              onChange={(e) =>
-                setNewLead({ ...newLead, vehicle_model: e.target.value })
-              }
-            />
+  type="text"
+  placeholder="Vehicle Number"
+  className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+  value={newLead.vehicle_number}
+  onChange={(e) =>
+    setNewLead({ ...newLead, vehicle_number: e.target.value.toUpperCase() })
+  }
+/>
+
+<input
+  type="text"
+  placeholder="Vehicle Model"
+  className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+  value={newLead.vehicle_model}
+  onChange={(e) =>
+    setNewLead({ ...newLead, vehicle_model: e.target.value.toUpperCase() })
+  }
+/>
+
             {/* Delivery Date Input (only visible when editing) */}
             {editingLead && (
               <input
@@ -445,6 +450,7 @@ const HomePage = () => {
                 }
               />
             )}
+            
 
             {/* Sales Rep Dropdown with Images */}
             <select
@@ -470,20 +476,6 @@ const HomePage = () => {
                 </option>
               ))}
             </select>
-
-            {/* Status Input (only visible when editing) */}
-            {editingLead && (
-              <input
-                type="text"
-                placeholder="Status"
-                className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={newLead.status}
-                onChange={(e) =>
-                  setNewLead({ ...newLead, status: e.target.value })
-                }
-              />
-            )}
-
             {/* Submit Button */}
             <button
               onClick={handleAddOrUpdateLead}

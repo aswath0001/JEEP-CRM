@@ -24,51 +24,71 @@ const Completed = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
         // Fetch user role from Firestore
         const userRef = doc(db, "role", user.uid);
-        getDoc(userRef).then((docSnapshot) => {
-          if (docSnapshot.exists()) {
-            const userData = docSnapshot.data();
-            // console.log(userData);
+        const docSnapshot = await getDoc(userRef);
 
-            setUserRole(userData.role === "admin"); // Assuming role is stored in 'role' field
+        if (docSnapshot.exists()) {
+          const userData = docSnapshot.data();
+          console.log("User Role Data:", userData.role); // ✅ Debugging
+
+          setUserRole(userData.role.toLowerCase() === "admin"); // Case-insensitive check
+          
+          // If the user is an admin, fetch scheduled leads
+          if (userData.role.toLowerCase() === "admin") {
+            const scheduledRef = ref(database, "Sheduled"); // Assuming "Sheduled" is your Firebase node
+            const snapshot = await get(scheduledRef);
+
+            if (snapshot.exists()) {
+              const data = snapshot.val();
+              console.log("Fetched scheduled leads:", data); // ✅ Debugging
+              const scheduledArray = Object.keys(data).map((key) => ({
+                id: key,
+                ...data[key],
+              }));
+              setScheduledLeads(scheduledArray);
+            } else {
+              console.log("No scheduled leads found.");
+            }
           }
-        });
-      } else {
-        setUserRole(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  console.log(userRole);
-  // Fetch completed leads from Firebase
-  useEffect(() => {
-    const fetchCompletedLeads = async () => {
-      try {
-        const completedRef = ref(database, "Completed");
-        const snapshot = await get(completedRef);
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          console.log("Fetched completed leads:", data); // Debugging
-          const completedArray = Object.keys(data).map((key) => ({
-            id: key,
-            ...data[key],
-          }));
-          setCompletedLeads(completedArray);
         } else {
-          console.log("No completed leads found."); // Debugging
+          console.log("No role found for user.");
+          setUserRole(false);
         }
       } catch (error) {
-        console.error("Error fetching completed leads:", error);
+        console.error("Error fetching user role or scheduled leads:", error);
       }
-    };
-  
-    fetchCompletedLeads();
-  }, []);
+    } else {
+      console.log("No authenticated user.");
+      setUserRole(false);
+    }
+  });
+
+  return () => unsubscribe();
+}, []);
+
+useEffect(() => {
+  const fetchCompletedLeads = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "Completed")); // Fetch from Firestore "Completed" collection
+      const completedArray = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      console.log("Fetched completed leads:", completedArray); // ✅ Debugging
+      setCompletedLeads(completedArray);
+    } catch (error) {
+      console.error("Error fetching completed leads:", error);
+    }
+  };
+
+  fetchCompletedLeads();
+}, []);
+
   const handleLogout = async () => {
     try {
       await signOut(auth); // Sign out the user
