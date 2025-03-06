@@ -28,7 +28,7 @@ const Sheduled = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        const userRef = doc(db, "users", user.uid); // Assuming roles are stored in a "users" collection
+        const userRef = doc(db, "Employees", user.uid); // Assuming roles are stored in a "users" collection
         getDoc(userRef).then((docSnapshot) => {
           if (docSnapshot.exists()) {
             const userData = docSnapshot.data();
