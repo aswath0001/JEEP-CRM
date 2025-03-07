@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { database } from "../firebase/firebase";
 import { ref, get } from "firebase/database";
 import { useNavigate, useLocation } from "react-router-dom";
+import Navbar from "../Navbar"; // Import the Navbar component
 
 const ReportPage = () => {
   const [reports, setReports] = useState([]);
@@ -29,76 +30,25 @@ const ReportPage = () => {
 
     fetchReports();
   }, []);
+
+  // Logout Function
   const handleLogout = async () => {
     try {
-      await signOut(auth); // Sign out the user
-      navigate("/login"); // Redirect to the login page or any other page
+      await signOut(auth);
+      navigate("/login");
     } catch (error) {
       console.error("Error logging out:", error);
     }
   };
+
   return (
     <div className="flex flex-col min-h-screen p-6 pt-24 font-poppins bg-gray-50">
-      {/* Navigation Bar */}
-      <div className="bg-white shadow-sm fixed top-0 left-0 w-full z-50">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-800">Reports</h2>
-            <nav className="flex space-x-4 mx-auto">
-              <button
-                onClick={() => navigate("/leads")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/leads" ? "bg-gray-300" : ""
-                }`}
-              >
-                Leads
-              </button>
-              <button
-                onClick={() => navigate("/employees")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/employees" ? "bg-gray-300" : ""
-                }`}
-              >
-                Employees
-              </button>
-              <button
-                onClick={() => navigate("/report")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/report" ? "bg-gray-300" : ""
-                }`}
-              >
-                Reports
-              </button>
-              <button
-                onClick={() => navigate("/sheduled")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/sheduled" ? "bg-gray-300" : ""
-                }`}
-              >
-                Sheduled
-              </button>
-              <button
-                onClick={() => navigate("/completed")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/completed" ? "bg-gray-300" : ""
-                }`}
-              >
-                Completed
-              </button>
-              <button
-                className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
-                onClick={handleLogout}
-              >
-                <span>Logout</span>
-              </button>
-            </nav>
-          </div>
-        </div>
-      </div>
-
+      {/* Use the Navbar component */}
+      <Navbar userRole={false} handleLogout={handleLogout} /> {/* Replace with actual userRole logic if needed */}
+      <h2 className="text-2xl font-medium text-center my-2"> Reports</h2>
       {/* Reports Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full border-separate border-spacing-y-2">
+      <div className="overflow-x-auto mt-6">
+        <table className="w-full border-collapse bg-white shadow-lg rounded-lg text-left">
           <thead>
             <tr className="bg-gray-200 text-gray-700">
               <th className="p-3">ID</th>

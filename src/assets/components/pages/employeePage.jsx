@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ref, get, set, remove } from "firebase/database";
 import { PlusCircle, Trash2, X, Edit } from "lucide-react";
+import Navbar from "../Navbar";
 import { useNavigate } from "react-router-dom";
 import {
   collection,
@@ -15,7 +16,7 @@ import {
   onAuthStateChanged,
   auth,
 } from "../firebase/firebase";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signOut } from "firebase/auth";
 
 const EmployeesPage = () => {
   const [employees, setEmployees] = useState([]);
@@ -29,15 +30,36 @@ const EmployeesPage = () => {
     profilePicture: "",
   });
   const [editingEmployee, setEditingEmployee] = useState(null); // Track the employee being edited
+  const [userRole, setUserRole] = useState(null); // Define userRole state
 
   const navigate = useNavigate();
 
+  // Fetch user role
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const userRef = doc(db, "EMPLOYEES", user.uid); // Assuming roles are stored in the EMPLOYEES collection
+        getDoc(userRef).then((docSnapshot) => {
+          if (docSnapshot.exists()) {
+            const userData = docSnapshot.data();
+            setUserRole(userData.Role); // Set the user's role
+          }
+        });
+      } else {
+        setUserRole(null); // No user is logged in
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch employees from Firestore
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
         const employeeRef = collection(db, "EMPLOYEES"); // Firestore collection reference
         const snapshot = await getDocs(employeeRef);
-  
+
         if (!snapshot.empty) {
           const employeeArray = snapshot.docs.map((doc) => ({
             id: doc.id,
@@ -49,9 +71,10 @@ const EmployeesPage = () => {
         console.error("Error fetching employees:", error);
       }
     };
-  
+
     fetchEmployees();
   }, []);
+
   const handleAddOrUpdateEmployee = async () => {
     if (
       !newEmployee.name ||
@@ -64,7 +87,7 @@ const EmployeesPage = () => {
       alert("All fields are required!");
       return;
     }
-  
+
     try {
       if (editingEmployee) {
         // Update existing employee in Firestore
@@ -80,7 +103,7 @@ const EmployeesPage = () => {
           },
           { merge: true }
         );
-  
+
         // Update state
         setEmployees((prev) =>
           prev.map((emp) =>
@@ -96,7 +119,7 @@ const EmployeesPage = () => {
           newEmployee.password
         );
         const user = userCredential.user;
-  
+
         // Store employee details in Firestore using UID
         const employeeRef = doc(db, "EMPLOYEES", user.uid);
         await setDoc(employeeRef, {
@@ -106,11 +129,11 @@ const EmployeesPage = () => {
           profilePicture: newEmployee.profilePicture,
           leads: [], // Empty array for leads
         });
-  
+
         // Update state
         setEmployees([...employees, { id: user.uid, ...newEmployee, leads: [] }]);
       }
-  
+
       // Reset form and close modal
       setShowEmployeeModal(false);
       setNewEmployee({
@@ -129,7 +152,7 @@ const EmployeesPage = () => {
   const deleteEmployee = async (employeeId) => {
     if (window.confirm("Are you sure you want to delete this employee?")) {
       try {
-        await deleteDoc(doc(db, "EMPLOYEE", employeeId)); // Deleting from Firestore
+        await deleteDoc(doc(db, "EMPLOYEES", employeeId)); // Deleting from Firestore
         setEmployees((prev) => prev.filter((emp) => emp.id !== employeeId)); // Updating local state
       } catch (error) {
         console.error("Error deleting employee:", error);
@@ -155,6 +178,7 @@ const EmployeesPage = () => {
     setNewEmployee({ ...employee }); // Populate the form with the employee's data
     setShowEmployeeModal(true); // Open the modal
   };
+
   const handleLogout = async () => {
     try {
       await signOut(auth); // Sign out the user
@@ -167,76 +191,13 @@ const EmployeesPage = () => {
   return (
     <div className="flex flex-col min-h-screen p-6 pt-24 font-poppins bg-gray-50">
       {/* Navigation Bar */}
-      <div className="bg-white shadow-sm fixed top-0 left-0 w-full z-50">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-800">Employees</h2>
-            <nav className="flex space-x-4">
-              <button
-                onClick={() => navigate("/leads")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/leads" ? "bg-gray-300" : ""
-                }`}
-              >
-                Leads
-              </button>
-              <button
-                onClick={() => navigate("/employees")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/employees" ? "bg-gray-300" : ""
-                }`}
-              >
-                Employees
-              </button>
-              <button
-                onClick={() => navigate("/report")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/report" ? "bg-gray-300" : ""
-                }`}
-              >
-                Reports
-              </button>
-              <button
-                onClick={() => navigate("/sheduled")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/sheduled" ? "bg-gray-300" : ""
-                }`}
-              >
-                Sheduled
-              </button>
-              <button
-                onClick={() => navigate("/completed")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/completed" ? "bg-gray-300" : ""
-                }`}
-              >
-                Completed
-              </button>
-              <button
-                className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
-                onClick={handleLogout}
-              >
-                <span>Logout</span>
-              </button>
-            </nav>
-            <button
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
-              onClick={() => {
-                setEditingEmployee(null); // Clear editing state
-                setShowEmployeeModal(true);
-              }}
-            >
-              <PlusCircle size={20} />
-              <span>Add Employee</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <Navbar userRole={userRole} handleLogout={handleLogout} />
+      <h2 className="text-2xl font-medium text-center my-2">Employees</h2>
 
       {/* Employees Table */}
-      <div className="overflow-x-auto">
+      <div className="mt-6 overflow-x-auto">
         <table className="w-full border-collapse bg-white shadow-lg rounded-lg text-left">
-          <thead>
+          <thead className="bg-gray-100">
             <tr className="bg-gray-200 text-gray-700">
               <th className="p-3">Profile</th>
               <th className="p-3">Employee ID</th>

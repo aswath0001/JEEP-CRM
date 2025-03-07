@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Navbar from "../Navbar";
 import {
   collection,
   doc,
@@ -216,69 +217,12 @@ useEffect(() => {
   return (
     <div className="flex flex-col min-h-screen p-6 pt-24 font-poppins bg-gray-50">
     {/* Navigation Bar */}
-    <div className="bg-white shadow-sm fixed top-0 left-0 w-full z-50">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-800">Sheduled Leads</h2>
-            <nav className="flex space-x-4">
-              <button
-                onClick={() => navigate("/leads")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/leads" ? "bg-gray-300" : ""
-                }`}
-              >
-                Leads
-              </button>
-              {userRole && (
-                <button
-                  onClick={() => navigate("/employees")}
-                  className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                    location.pathname === "/employees" ? "bg-gray-300" : ""
-                  }`}
-                >
-                  Employees
-                </button>
-              )}
-              {userRole && (
-                <button
-                  onClick={() => navigate("/report")}
-                  className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                    location.pathname === "/report" ? "bg-gray-300" : ""
-                  }`}
-                >
-                  Reports
-                </button>
-              )}
-              <button
-                onClick={() => navigate("/sheduled")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/sheduled" ? "bg-gray-300" : ""
-                }`}
-              >
-                Sheduled
-              </button>
-              <button
-                onClick={() => navigate("/completed")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/completed" ? "bg-gray-300" : ""
-                }`}
-              >
-                Completed
-              </button>
-              <button
-                className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
-                onClick={handleLogout}
-              >
-                <span>Logout</span>
-              </button>
-            </nav>
-          </div>
-        </div>
-      </div>
+    <Navbar userRole={userRole} handleLogout={handleLogout} />
+      <h2 className="text-2xl font-medium text-center my-2">Scheduled</h2>
 
       {/* Leads Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <table className="min-w-full">
+      <div className="mt-6 overflow-x-auto">
+        <table className="w-full border-collapse bg-white shadow-lg rounded-lg text-left">
           <thead className="bg-gray-100">
             <tr>
               <th className="p-3">Name</th>
