@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "../Navbar";
-import { PlusCircle, Edit, Trash2, X, Phone } from "lucide-react"; // Import Phone icon
+import { PlusCircle, Edit, Trash2, X, Phone } from "lucide-react";
 import {
   getAuth,
   onAuthStateChanged,
@@ -182,67 +182,46 @@ const HomePage = () => {
       console.error("Error logging out:", error);
     }
   };
-  const employeeOptions = employees.map((employee) => ({
-    value: employee.name,
-    label: employee.name,
-    profilePicture: employee.profilePicture,
-  }));
+
   return (
-    <div className="flex flex-col min-h-screen p-6 pt-24 font-poppins bg-gray-50">
+    <div className="flex flex-col min-h-screen p-4 pt-20 font-poppins bg-gray-50">
       {/* Navigation Bar */}
       <Navbar userRole={userRole} handleLogout={handleLogout} />
       <h2 className="text-2xl font-medium text-center my-2">Leads</h2>
 
-      {/* Leads Table */}
-      <div className="mt-6 overflow-x-auto">
+      {/* Leads Table (Hidden on Mobile) */}
+      <div className="hidden md:block mt-6 overflow-x-auto">
         <table className="w-full border-collapse bg-white shadow-lg rounded-lg text-left">
           <thead className="bg-gray-100">
             <tr className="bg-gray-200 text-gray-700">
-              <th className="p-3 text-left w-[15%]">Name</th>
-              <th className="p-3 text-left w-[15%]">Vehicle Number</th>
-              <th className="p-3 text-left w-[15%]">Vehicle Model</th>
-              <th className="p-3 text-left w-[15%]">Contact</th>
-              <th className="p-3 text-left w-[15%]">Testdrive Date</th>
-              <th className="p-3 text-left w-[15%]">Sales Rep</th>
-              <th className="p-3 text-left w-[15%]">Status</th>
-              <th className="p-3 text-center w-[10%]">Actions</th>
+              <th className="p-3 text-left">Name</th>
+              <th className="p-3 text-left">Vehicle Number</th>
+              <th className="p-3 text-left">Vehicle Model</th>
+              <th className="p-3 text-left">Contact</th>
+              <th className="p-3 text-left">Testdrive Date</th>
+              <th className="p-3 text-left">Sales Rep</th>
+              <th className="p-3 text-left">Status</th>
+              <th className="p-3 text-center">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {leads.map((lead) => (
               <tr key={lead.id} className="hover:bg-gray-50 transition-all">
-                <td className="px-6 py-4 text-sm text-gray-700 text-left w-[15%]">
-                  {lead.name}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700 text-left w-[15%]">
-                  {lead.vehicle_number}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700 text-left w-[15%]">
-                  {lead.vehicle_model}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700 text-left w-[15%]">
-                  {lead.contact}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700 text-left w-[15%]">
-                  {lead.delivery_date}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700 text-left w-[15%]">
-                  {lead.sales_rep}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700 text-left w-[15%]">
-                  {lead.status}
-                </td>
-                <td className="px-6 py-4 text-sm text-center w-[10%]">
+                <td className="px-6 py-4 text-sm text-gray-700">{lead.name}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">{lead.vehicle_number}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">{lead.vehicle_model}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">{lead.contact}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">{lead.delivery_date}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">{lead.sales_rep}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">{lead.status}</td>
+                <td className="px-6 py-4 text-sm text-center">
                   <div className="flex space-x-2 justify-center">
-                    {/* Call Button */}
                     <a
                       href={`tel:${lead.contact}`}
                       className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition-all flex items-center"
                     >
                       <Phone size={16} />
                     </a>
-
-                    {/* Edit Button */}
                     <button
                       onClick={() => {
                         setEditingLead(lead);
@@ -253,8 +232,6 @@ const HomePage = () => {
                     >
                       <Edit size={16} />
                     </button>
-
-                    {/* Delete Button */}
                     <button
                       onClick={() => deleteLead(lead.id)}
                       className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-all flex items-center"
@@ -268,7 +245,51 @@ const HomePage = () => {
           </tbody>
         </table>
       </div>
-           {/* Floating Add Lead Button */}
+
+      {/* Leads Cards (Visible on Mobile) */}
+      <div className="md:hidden mt-6 space-y-4">
+        {leads.map((lead) => (
+          <div key={lead.id} className="bg-white p-4 rounded-lg shadow-lg">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="font-semibold">{lead.name}</p>
+                <p className="text-sm text-gray-600">{lead.vehicle_number}</p>
+                <p className="text-sm text-gray-600">{lead.vehicle_model}</p>
+                <p className="text-sm text-gray-600">{lead.contact}</p>
+                <p className="text-sm text-gray-600">{lead.delivery_date}</p>
+                <p className="text-sm text-gray-600">{lead.sales_rep}</p>
+                <p className="text-sm text-gray-600">{lead.status}</p>
+              </div>
+              <div className="flex space-x-2">
+                <a
+                  href={`tel:${lead.contact}`}
+                  className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition-all flex items-center"
+                >
+                  <Phone size={16} />
+                </a>
+                <button
+                  onClick={() => {
+                    setEditingLead(lead);
+                    setNewLead({ ...lead });
+                    setShowLeadModal(true);
+                  }}
+                  className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-all flex items-center"
+                >
+                  <Edit size={16} />
+                </button>
+                <button
+                  onClick={() => deleteLead(lead.id)}
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-all flex items-center"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Floating Add Lead Button */}
       {!userRole && (
         <button
           className="fixed bottom-8 right-8 bg-green-600 text-white rounded-full p-4 shadow-lg hover:bg-green-700 transition-all"
@@ -289,24 +310,20 @@ const HomePage = () => {
           <PlusCircle size={24} />
         </button>
       )}
+
       {/* Add/Edit Lead Modal */}
       {showLeadModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg w-96 relative">
-            {/* Close Button */}
+          <div className="bg-white p-6 rounded-lg w-11/12 md:w-96 relative">
             <button
               className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
               onClick={() => setShowLeadModal(false)}
             >
               <X size={20} />
             </button>
-
-            {/* Modal Title */}
             <h2 className="text-xl font-bold mb-4">
               {editingLead ? "Edit Lead" : "Add Lead"}
             </h2>
-
-            {/* Form Inputs */}
             <input
               type="text"
               placeholder="Name"
@@ -324,26 +341,23 @@ const HomePage = () => {
               }
             />
             <input
-  type="text"
-  placeholder="Vehicle Number"
-  className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-  value={newLead.vehicle_number}
-  onChange={(e) =>
-    setNewLead({ ...newLead, vehicle_number: e.target.value.toUpperCase() })
-  }
-/>
-
-<input
-  type="text"
-  placeholder="Vehicle Model"
-  className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-  value={newLead.vehicle_model}
-  onChange={(e) =>
-    setNewLead({ ...newLead, vehicle_model: e.target.value.toUpperCase() })
-  }
-/>
-
-            {/* Delivery Date Input (only visible when editing) */}
+              type="text"
+              placeholder="Vehicle Number"
+              className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={newLead.vehicle_number}
+              onChange={(e) =>
+                setNewLead({ ...newLead, vehicle_number: e.target.value.toUpperCase() })
+              }
+            />
+            <input
+              type="text"
+              placeholder="Vehicle Model"
+              className="w-full p-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+              value={newLead.vehicle_model}
+              onChange={(e) =>
+                setNewLead({ ...newLead, vehicle_model: e.target.value.toUpperCase() })
+              }
+            />
             {editingLead && (
               <input
                 type="date"
@@ -354,9 +368,6 @@ const HomePage = () => {
                 }
               />
             )}
-            
-
-            {/* Sales Rep Dropdown with Images */}
             <select
               value={newLead.sales_rep}
               onChange={(e) =>
@@ -367,20 +378,10 @@ const HomePage = () => {
               <option value="">Select Sales Rep</option>
               {employees.map((employee) => (
                 <option key={employee.id} value={employee.name}>
-                  <div className="flex items-center">
-                    {employee.profilePicture && (
-                      <img
-                        src={employee.profilePicture}
-                        alt={employee.name}
-                        className="w-6 h-6 rounded-full mr-2"
-                      />
-                    )}
-                    {employee.name}
-                  </div>
+                  {employee.name}
                 </option>
               ))}
             </select>
-            {/* Submit Button */}
             <button
               onClick={handleAddOrUpdateLead}
               className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-all"

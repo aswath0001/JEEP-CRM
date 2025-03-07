@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const Navbar = ({ userRole, handleLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // State to manage mobile menu visibility
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
 
   return (
     <div className="bg-white shadow-sm fixed top-0 left-0 w-full z-50">
@@ -12,9 +17,12 @@ const Navbar = ({ userRole, handleLogout }) => {
           {/* Centered Navigation Menu */}
           <nav className="flex space-x-4 mx-auto">
             <button
-              onClick={() => navigate("/leads")}
-              className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                location.pathname === "/leads" ? "bg-gray-300" : ""
+              onClick={() => {
+                navigate('/leads');
+                setIsMenuOpen(false); // Close menu after navigation
+              }}
+              className={`block lg:inline-block px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                location.pathname === '/leads' ? 'bg-gray-300' : ''
               }`}
             >
               Leads
@@ -44,17 +52,23 @@ const Navbar = ({ userRole, handleLogout }) => {
 
             {/* Common buttons for both roles */}
             <button
-              onClick={() => navigate("/sheduled")}
-              className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                location.pathname === "/sheduled" ? "bg-gray-300" : ""
+              onClick={() => {
+                navigate('/sheduled');
+                setIsMenuOpen(false);
+              }}
+              className={`block lg:inline-block px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                location.pathname === '/sheduled' ? 'bg-gray-300' : ''
               }`}
             >
               Scheduled
             </button>
             <button
-              onClick={() => navigate("/completed")}
-              className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                location.pathname === "/completed" ? "bg-gray-300" : ""
+              onClick={() => {
+                navigate('/completed');
+                setIsMenuOpen(false);
+              }}
+              className={`block lg:inline-block px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                location.pathname === '/completed' ? 'bg-gray-300' : ''
               }`}
             >
               Completed

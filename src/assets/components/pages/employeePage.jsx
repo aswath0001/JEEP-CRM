@@ -56,6 +56,22 @@ const EmployeesPage = () => {
     fetchEmployees();
   }, []);
 
+  // Function to get the next employee ID
+  const getNextEmployeeId = async () => {
+    const counterRef = doc(db, "counters", "employeeId"); // Reference to the counter document
+    const counterDoc = await getDoc(counterRef);
+
+    let nextId = 1; // Default starting ID
+    if (counterDoc.exists()) {
+      nextId = counterDoc.data().lastId + 1; // Increment the last ID
+    }
+
+    // Update the counter in Firestore
+    await setDoc(counterRef, { lastId: nextId }, { merge: true });
+
+    return nextId;
+  };
+
   const handleAddOrUpdateEmployee = async () => {
     if (
       !newEmployee.name ||
@@ -93,6 +109,9 @@ const EmployeesPage = () => {
         );
         setEditingEmployee(null); // Clear editing state
       } else {
+        // Get the next employee ID
+        const nextId = await getNextEmployeeId();
+
         // Create a new account in Firebase Auth
         const userCredential = await createUserWithEmailAndPassword(
           auth,
@@ -104,6 +123,7 @@ const EmployeesPage = () => {
         // Store employee details in Firestore using UID
         const employeeRef = doc(db, "EMPLOYEES", user.uid);
         await setDoc(employeeRef, {
+          id: nextId, // Add the auto-incremented ID
           name: newEmployee.name,
           Mobile_no: newEmployee.Mobile_no,
           Role: newEmployee.Role,
@@ -112,7 +132,7 @@ const EmployeesPage = () => {
         });
 
         // Update state
-        setEmployees([...employees, { id: user.uid, ...newEmployee, leads: [] }]);
+        setEmployees([...employees, { id: nextId, ...newEmployee, leads: [] }]);
       }
 
       // Reset form and close modal
@@ -177,59 +197,110 @@ const EmployeesPage = () => {
 
       {/* Employees Table */}
       <div className="mt-6 overflow-x-auto">
-        <table className="w-full border-collapse bg-white shadow-lg rounded-lg text-left">
-          <thead className="bg-gray-100">
-            <tr className="bg-gray-200 text-gray-700">
-              <th className="p-3">Profile</th>
-              <th className="p-3">Employee ID</th>
-              <th className="p-3">Name</th>
-              <th className="p-3">Mobile Number</th>
-              <th className="p-3">Email</th>
-              <th className="p-3">Role</th>
-              <th className="p-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {employees.map((emp) => (
-              <tr key={emp.id} className="border-b">
-                <td className="p-3">
+        {/* Desktop Table */}
+        <div className="hidden md:block">
+          <table className="w-full border-collapse bg-white shadow-lg rounded-lg text-left">
+            <thead className="bg-gray-100">
+              <tr className="bg-gray-200 text-gray-700">
+                <th className="p-3">Profile</th>
+                <th className="p-3">Employee ID</th>
+                <th className="p-3">Name</th>
+                <th className="p-3">Mobile Number</th>
+                <th className="p-3">Email</th>
+                <th className="p-3">Role</th>
+                <th className="p-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {employees.map((emp) => (
+                <tr key={emp.id} className="border-b">
+                  <td className="p-3">
+                    {emp.profilePicture ? (
+                      <img
+                        src={emp.profilePicture}
+                        alt="Profile"
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+                        <span className="text-gray-600 text-sm">No Image</span>
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-3">{emp.id}</td>
+                  <td className="p-3">{emp.name}</td>
+                  <td className="p-3">{emp.Mobile_no}</td>
+                  <td className="p-3">{emp.Email_id}</td>
+                  <td className="p-3">{emp.Role}</td>
+                  <td className="p-3 flex space-x-2">
+                    {/* Edit Button */}
+                    <button
+                      onClick={() => handleEditEmployee(emp)}
+                      className="bg-blue-500 text-white px-3 py-1 rounded flex items-center hover:bg-blue-600"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    {/* Delete Button */}
+                    <button
+                      onClick={() => deleteEmployee(emp.id)}
+                      className="bg-red-500 text-white px-3 py-1 rounded flex items-center hover:bg-red-600"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden">
+          {employees.map((emp) => (
+            <div key={emp.id} className="bg-white shadow-lg rounded-lg p-4 mb-4">
+              <div className="flex items-center space-x-4">
+                <div>
                   {emp.profilePicture ? (
                     <img
                       src={emp.profilePicture}
                       alt="Profile"
-                      className="w-10 h-10 rounded-full object-cover"
+                      className="w-12 h-12 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
                       <span className="text-gray-600 text-sm">No Image</span>
                     </div>
                   )}
-                </td>
-                <td className="p-3">{emp.id}</td>
-                <td className="p-3">{emp.name}</td>
-                <td className="p-3">{emp.Mobile_no}</td>
-                <td className="p-3">{emp.Email_id}</td>
-                <td className="p-3">{emp.Role}</td>
-                <td className="p-3 flex space-x-2">
-                  {/* Edit Button */}
-                  <button
-                    onClick={() => handleEditEmployee(emp)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded flex items-center hover:bg-blue-600"
-                  >
-                    <Edit size={16} />
-                  </button>
-                  {/* Delete Button */}
-                  <button
-                    onClick={() => deleteEmployee(emp.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded flex items-center hover:bg-red-600"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+                <div>
+                  <p className="font-semibold">{emp.name}</p>
+                  <p className="text-sm text-gray-600">{emp.Role}</p>
+                </div>
+              </div>
+              <div className="mt-4">
+                <p className="text-sm text-gray-700">ID: {emp.id}</p>
+                <p className="text-sm text-gray-700">Mobile: {emp.Mobile_no}</p>
+                <p className="text-sm text-gray-700">Email: {emp.Email_id}</p>
+              </div>
+              <div className="mt-4 flex space-x-2">
+                {/* Edit Button */}
+                <button
+                  onClick={() => handleEditEmployee(emp)}
+                  className="bg-blue-500 text-white px-3 py-1 rounded flex items-center hover:bg-blue-600"
+                >
+                  <Edit size={16} />
+                </button>
+                {/* Delete Button */}
+                <button
+                  onClick={() => deleteEmployee(emp.id)}
+                  className="bg-red-500 text-white px-3 py-1 rounded flex items-center hover:bg-red-600"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Floating Add Employee Button */}
@@ -254,7 +325,7 @@ const EmployeesPage = () => {
       {/* Add/Edit Employee Modal */}
       {showEmployeeModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg w-96 relative">
+          <div className="bg-white p-6 rounded-lg w-full md:w-96 relative">
             <button
               className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
               onClick={() => setShowEmployeeModal(false)}

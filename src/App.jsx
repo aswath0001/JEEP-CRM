@@ -1,31 +1,22 @@
-import { onAuthStateChanged, auth, db } from "./assets/components/firebase/firebase";
-import React, { useState, useEffect } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { getDoc, doc } from "firebase/firestore";
+import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { auth, db } from "./assets/components/firebase/firebase";
 import LoginPage from "./assets/components/pages/loginpage";
 import HomePage from "./assets/components/pages/homepage";
-import ProtectedRoute from "./assets/components/protectroute";
 import EmployeesPage from "./assets/components/pages/employeePage";
 import ReportPage from "./assets/components/pages/report";
 import Sheduled from "./assets/components/pages/sheduled";
 import Completed from "./assets/components/pages/completed";
 import Navbar from "./assets/components/Navbar";
-import {
-  getFirestore,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-} from "firebase/firestore";
+import ProtectedRoute from "./assets/components/protectroute";
 
 function App() {
-  const [leads, setLeads] = useState([]);
-  const [userRole, setUserRole] = useState();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState(null);
 
-  // ✅ Fetch user role from Firestore
+  // ✅ Listen for authentication changes & fetch user role
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
