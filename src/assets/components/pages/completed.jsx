@@ -45,14 +45,7 @@ useEffect(() => {
   fetchCompletedLeads();
 }, []);
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth); // Sign out the user
-      navigate("/login"); // Redirect to the login page or any other page
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
-  };
+
 
   return (
     <div className="flex flex-col min-h-screen p-6 pt-24 font-poppins bg-gray-50">

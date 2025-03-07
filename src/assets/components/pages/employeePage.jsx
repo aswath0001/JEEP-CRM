@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { ref, get, set, remove } from "firebase/database";
 import { PlusCircle, Trash2, X, Edit } from "lucide-react";
@@ -77,30 +78,33 @@ const EmployeesPage = () => {
       !newEmployee.name ||
       !newEmployee.Mobile_no ||
       !newEmployee.Email_id ||
-      !newEmployee.password ||
       !newEmployee.Role ||
       !newEmployee.profilePicture
     ) {
-      alert("All fields are required!");
+      alert("All fields except password are required!");
       return;
     }
-
+  
     try {
       if (editingEmployee) {
         // Update existing employee in Firestore
         const employeeRef = doc(db, "EMPLOYEES", editingEmployee.id);
-        await setDoc(
-          employeeRef,
-          {
-            name: newEmployee.name,
-            Mobile_no: newEmployee.Mobile_no,
-            Role: newEmployee.Role,
-            profilePicture: newEmployee.profilePicture,
-            leads: editingEmployee.leads || [], // Preserve existing leads
-          },
-          { merge: true }
-        );
-
+        const updateData = {
+          name: newEmployee.name,
+          Mobile_no: newEmployee.Mobile_no,
+          Email_id: newEmployee.Email_id,
+          Role: newEmployee.Role,
+          profilePicture: newEmployee.profilePicture,
+          leads: editingEmployee.leads || [], // Preserve existing leads
+        };
+  
+        // Only update password if a new one is provided
+        if (newEmployee.password) {
+          updateData.password = newEmployee.password;
+        }
+  
+        await setDoc(employeeRef, updateData, { merge: true });
+  
         // Update state
         setEmployees((prev) =>
           prev.map((emp) =>
@@ -111,7 +115,7 @@ const EmployeesPage = () => {
       } else {
         // Get the next employee ID
         const nextId = await getNextEmployeeId();
-
+  
         // Create a new account in Firebase Auth
         const userCredential = await createUserWithEmailAndPassword(
           auth,
@@ -119,22 +123,23 @@ const EmployeesPage = () => {
           newEmployee.password
         );
         const user = userCredential.user;
-
+  
         // Store employee details in Firestore using UID
         const employeeRef = doc(db, "EMPLOYEES", user.uid);
         await setDoc(employeeRef, {
           id: nextId, // Add the auto-incremented ID
           name: newEmployee.name,
           Mobile_no: newEmployee.Mobile_no,
+          Email_id: newEmployee.Email_id,
           Role: newEmployee.Role,
           profilePicture: newEmployee.profilePicture,
           leads: [], // Empty array for leads
         });
-
+  
         // Update state
         setEmployees([...employees, { id: nextId, ...newEmployee, leads: [] }]);
       }
-
+  
       // Reset form and close modal
       setShowEmployeeModal(false);
       setNewEmployee({
@@ -153,14 +158,28 @@ const EmployeesPage = () => {
   const deleteEmployee = async (employeeId) => {
     if (window.confirm("Are you sure you want to delete this employee?")) {
       try {
-        await deleteDoc(doc(db, "EMPLOYEES", employeeId)); // Deleting from Firestore
-        setEmployees((prev) => prev.filter((emp) => emp.id !== employeeId)); // Updating local state
+        const id = String(employeeId); // Convert to string
+        console.log("Deleting employee with ID:", id); // Debugging
+  
+        // Step 1: Delete the employee document from Firestore
+        const employeeRef = doc(db, "EMPLOYEES", id);
+        await deleteDoc(employeeRef);
+        console.log("Employee deleted successfully from Firestore"); // Debugging
+  
+        // Step 2: Update local state
+        setEmployees((prev) => {
+          const updatedEmployees = prev.filter((emp) => emp.id !== id);
+          console.log("Updated employees list:", updatedEmployees); // Debugging
+          return updatedEmployees;
+        });
+  
+        alert("Employee deleted successfully!");
       } catch (error) {
         console.error("Error deleting employee:", error);
+        alert("Failed to delete employee. Please try again.");
       }
     }
   };
-
   // Handle profile picture upload
   const handleProfilePictureUpload = (e) => {
     const file = e.target.files[0];
@@ -180,14 +199,6 @@ const EmployeesPage = () => {
     setShowEmployeeModal(true); // Open the modal
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth); // Sign out the user
-      navigate("/login"); // Redirect to the login page or any other page
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
-  };
 
   return (
     <div className="flex flex-col min-h-screen p-6 pt-24 font-poppins bg-gray-50">
