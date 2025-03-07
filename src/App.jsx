@@ -13,60 +13,66 @@ import Navbar from "./assets/components/Navbar";
 import ProtectedRoute from "./assets/components/protectroute";
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState(null);
 
-  // ✅ Listen for authentication changes & fetch user role
+ 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          const userRef = doc(db, "EMPLOYEES", user.uid);
-          const docSnapshot = await getDoc(userRef);
-
-          if (docSnapshot.exists()) {
-            const userData = docSnapshot.data();
-            setUserRole(userData.Role?.toLowerCase() === "employee");
-
-            if (userData.Role?.toLowerCase() === "employee" && userData.leads) {
-              // Fetch assigned leads
-              const assignedLeads = [];
-              for (const leadId of userData.leads) {
-                const leadRef = doc(db, "LEADS", leadId);
-                const leadDoc = await getDoc(leadRef);
-                if (leadDoc.exists()) {
-                  assignedLeads.push({ id: leadDoc.id, ...leadDoc.data() });
-                }
-              }
-              setLeads(assignedLeads);
-            }
-          } else {
-            setUserRole(false);
-          }
-        } catch (error) {
-          console.error("Error fetching user role:", error);
-          setUserRole(false);
-        }
-      } else {
-        setUserRole(false);
+    const fetchUserRole = async (user) => {
+      if (!user) {
+        console.log("No authenticated user.");
+        setUserRole(null);
+        return;
       }
+
+      console.log("Fetching role for UID:", user.uid);
+
+      try {
+        const userRef = doc(db, "EMPLOYEES", user.uid); // Change to your collection name
+        const docSnapshot = await getDoc(userRef);
+
+        if (docSnapshot.exists()) {
+          const userData = docSnapshot.data();
+          console.log("User document found:", userData);
+
+          const role = userData.Role?.toLowerCase(); // Ensure case consistency
+          if (role === "employee") {
+            setUserRole("Employee");
+          } else {
+            setUserRole("");
+          }
+        } else {
+          console.log("No user document found.");
+          setUserRole(""); // Default to Admin if user document isn't found
+        }
+      } catch (error) {
+        console.error("Error fetching user role:", error);
+      }
+    };
+
+    onAuthStateChanged(auth, (user) => {
+      fetchUserRole(user);
     });
+  }, []);;
 
-    return () => unsubscribe();
-  }, []);
-
-  console.log(userRole);
+  const handleLogout = async () => {
+      try {
+        await signOut(auth); // Sign out the user
+        navigate("/login"); // Redirect to the login page or any other page
+      } catch (error) {
+        console.error("Error logging out:", error);
+      }
+    }; 
   
 
   return (
     <Router>
-      <AppContent />
+      <AppContent userRole={userRole} handleLogout={handleLogout} />
     </Router>
   );
 }
 
 // Separate component to handle conditional rendering of Navbar
-function AppContent() {
+function AppContent({userRole, handleLogout}) {
   const location = useLocation();
 
   // Check if the current route is the login page
@@ -75,7 +81,9 @@ function AppContent() {
   return (
     <>
       {/* Conditionally render Navbar */}
-      {!isLoginPage && <Navbar />}
+      {!isLoginPage && <Navbar userRole={userRole} handleLogout={handleLogout} />}
+      
+      
 
       <Routes>
         {/* Public Route */}

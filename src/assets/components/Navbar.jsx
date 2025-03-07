@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const Navbar = ({ userRole, handleLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false); // State to manage mobile menu visibility
+
+  useEffect(() => {
+    console.log("Navbar received userRole:", userRole);
+  }, [userRole]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -56,10 +60,13 @@ const Navbar = ({ userRole, handleLogout }) => {
             </button>
 
             {/* Show these only for admins */}
-            {!userRole && (
+            {!userRole  && (
               <>
                 <button
-                  onClick={() => navigate("/employees")}
+                  onClick={() => {
+                    console.log("Rendering Employees button");
+                    navigate("/employees");
+                  }}
                   className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
                     location.pathname === "/employees" ? "bg-gray-300" : ""
                   }`}
@@ -67,7 +74,10 @@ const Navbar = ({ userRole, handleLogout }) => {
                   Employees
                 </button>
                 <button
-                  onClick={() => navigate("/report")}
+                  onClick={() => {
+                    console.log("Rendering Reports button");
+                    navigate("/report");
+                  }}
                   className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
                     location.pathname === "/report" ? "bg-gray-300" : ""
                   }`}
