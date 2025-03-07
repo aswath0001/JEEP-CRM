@@ -1,31 +1,22 @@
-import { onAuthStateChanged, auth, db } from "./assets/components/firebase/firebase";
-import React, { useState, useEffect } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { getDoc, doc } from "firebase/firestore";
+import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { auth, db } from "./assets/components/firebase/firebase";
 import LoginPage from "./assets/components/pages/loginpage";
 import HomePage from "./assets/components/pages/homepage";
-import ProtectedRoute from "./assets/components/protectroute";
 import EmployeesPage from "./assets/components/pages/employeePage";
 import ReportPage from "./assets/components/pages/report";
 import Sheduled from "./assets/components/pages/sheduled";
 import Completed from "./assets/components/pages/completed";
 import Navbar from "./assets/components/Navbar";
-import {
-  getFirestore,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-} from "firebase/firestore";
+import ProtectedRoute from "./assets/components/protectroute";
 
 function App() {
-  const [leads, setLeads] = useState([]);
-  const [userRole, setUserRole] = useState();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState(null);
 
-  // ✅ Fetch user role from Firestore
+  // ✅ Listen for authentication changes & fetch user role
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -35,29 +26,18 @@ function App() {
 
           if (docSnapshot.exists()) {
             const userData = docSnapshot.data();
-            setUserRole(userData.Role?.toLowerCase() === "employee");
-
-            if (userData.Role?.toLowerCase() === "employee" && userData.leads) {
-              // Fetch assigned leads
-              const assignedLeads = [];
-              for (const leadId of userData.leads) {
-                const leadRef = doc(db, "LEADS", leadId);
-                const leadDoc = await getDoc(leadRef);
-                if (leadDoc.exists()) {
-                  assignedLeads.push({ id: leadDoc.id, ...leadDoc.data() });
-                }
-              }
-              setLeads(assignedLeads);
-            }
+            setUserRole(userData.Role?.toLowerCase());
+            setIsAuthenticated(true);
           } else {
-            setUserRole(false);
+            setUserRole(null);
+            setIsAuthenticated(false);
           }
         } catch (error) {
           console.error("Error fetching user role:", error);
-          setUserRole(false);
+          setIsAuthenticated(false);
         }
       } else {
-        setUserRole(false);
+        setIsAuthenticated(false);
       }
     });
 
@@ -66,71 +46,38 @@ function App() {
 
   return (
     <Router>
-      <AppContent />
+      <AppContent isAuthenticated={isAuthenticated} />
     </Router>
   );
 }
 
-// Separate component to handle conditional rendering of Navbar
-function AppContent() {
+// ✅ Separate component to manage navigation & layout
+function AppContent({ isAuthenticated }) {
   const location = useLocation();
 
-  // Check if the current route is the login page
+  // ✅ Hide Navbar only on the Login Page
   const isLoginPage = location.pathname === "/";
 
   return (
     <>
-      {/* Conditionally render Navbar */}
       {!isLoginPage && <Navbar />}
 
       <Routes>
-        {/* Public Route */}
-        <Route path="/" element={<LoginPage />} />
+        {/* ✅ Public Route: Login */}
+        <Route path="/" element={isAuthenticated ? <Navigate to="/leads" replace /> : <LoginPage />} />
 
-        {/* Protected Routes */}
-        <Route
-          path="/leads"
-          element={
-            <ProtectedRoute>
-              <HomePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/employees"
-          element={
-            <ProtectedRoute>
-              <EmployeesPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/report"
-          element={
-            <ProtectedRoute>
-              <ReportPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/sheduled"
-          element={
-            <ProtectedRoute>
-              <Sheduled />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/completed"
-          element={
-            <ProtectedRoute>
-              <Completed />
-            </ProtectedRoute>
-          }
-        />
+        {/* ✅ Protected Routes */}
+        <Route path="/leads" element={isAuthenticated ? <HomePage /> : <Navigate to="/" replace />} />
+        <Route path="/employees" element={isAuthenticated ? <EmployeesPage /> : <Navigate to="/" replace />} />
+        <Route path="/report" element={isAuthenticated ? <ReportPage /> : <Navigate to="/" replace />} />
+        <Route path="/sheduled" element={isAuthenticated ? <Sheduled /> : <Navigate to="/" replace />} />
+        <Route path="/completed" element={isAuthenticated ? <Completed /> : <Navigate to="/" replace />} />
 
-        {/* Redirect after login */}
+        {/* ✅ Redirect Home to Leads */}
         <Route path="/home" element={<Navigate to="/leads" replace />} />
+
+        {/* ✅ Catch-All Route: Redirect unauthorized users */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );

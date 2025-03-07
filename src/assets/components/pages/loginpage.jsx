@@ -24,7 +24,7 @@ const LoginPage = () => {
 
     setLoading(false);
   };
-const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#5b6473] p-4">
       <div className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-md">
@@ -36,7 +36,7 @@ const [showPassword, setShowPassword] = useState(false);
         )}
 
         <form onSubmit={handleLogin} className="space-y-4">
-        <input
+          <input
   type="email"
   placeholder="Email"
   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -56,11 +56,11 @@ const [showPassword, setShowPassword] = useState(false);
           />
 
           <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-3 text-gray-500"
+            type="submit"
+            className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-all"
+            disabled={loading}
           >
-            {showPassword ? "Hide" : "Show"}
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
