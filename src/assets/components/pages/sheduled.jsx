@@ -199,8 +199,8 @@ const Sheduled = () => {
       <Navbar userRole={userRole} handleLogout={handleLogout} />
       <h2 className="text-2xl font-medium text-center my-2">Scheduled Leads</h2>
 
-      {/* Leads Table */}
-      <div className="mt-6 overflow-x-auto">
+      {/* Leads Table (Hidden on Mobile) */}
+      <div className="hidden md:block mt-6 overflow-x-auto">
         <table className="w-full border-collapse bg-white shadow-lg rounded-lg text-left">
           <thead className="bg-gray-100">
             <tr>
@@ -265,6 +265,70 @@ const Sheduled = () => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Leads Cards (Visible on Mobile) */}
+      <div className="md:hidden mt-6 space-y-4">
+        {scheduledLeads.map((lead) => (
+          <div key={lead.id} className="bg-white p-4 rounded-lg shadow-lg">
+            <div className="space-y-2">
+              <p className="font-semibold">{lead.name}</p>
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Vehicle Number:</span> {lead.vehicle_number}
+              </p>
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Vehicle Model:</span> {lead.vehicle_model}
+              </p>
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Contact:</span> {lead.contact}
+              </p>
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Delivery Date:</span> {lead.delivery_date}
+              </p>
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Sales Rep:</span> {lead.sales_rep}
+              </p>
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Timer:</span> {formatTimer(timers[lead.id])}
+              </p>
+              <div className="flex space-x-2">
+                {/* Timer Button */}
+                <button
+                  onClick={() => toggleTimer(lead.id)}
+                  className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition-all"
+                >
+                  {running[lead.id] ? <Pause size={16} /> : <Play size={16} />}
+                </button>
+
+                {/* Reset Timer Button */}
+                <button
+                  onClick={() => resetTimer(lead.id)}
+                  className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition-all"
+                >
+                  <RefreshCw size={16} />
+                </button>
+
+                {/* WhatsApp Link */}
+                <a
+                  href={`https://wa.me/${lead.contact}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition-all flex items-center"
+                >
+                  <MessageSquare size={16} />
+                </a>
+
+                {/* Delete Button */}
+                <button
+                  onClick={() => deleteLead(lead.id)}
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-all flex items-center"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
