@@ -1,29 +1,67 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const Navbar = ({ userRole, handleLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // State to manage mobile menu visibility
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
 
   return (
     <div className="bg-white shadow-sm fixed top-0 left-0 w-full z-50">
       <div className="container mx-auto px-6 py-4">
         <div className="flex justify-between items-center">
-          {/* Centered Navigation Menu */}
-          <nav className="flex space-x-4 mx-auto"> {/* mx-auto centers the nav */}
+          {/* Hamburger Menu for Mobile */}
+          <button
+            onClick={toggleMenu}
+            className="lg:hidden text-gray-700 focus:outline-none"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 6h16M4 12h16m-7 6h7"
+              ></path>
+            </svg>
+          </button>
+
+          {/* Centered Navigation Menu (Hidden on Mobile) */}
+          <nav
+            className={`lg:flex lg:space-x-4 lg:mx-auto ${
+              isMenuOpen
+                ? 'block absolute top-16 left-0 w-full bg-white shadow-lg'
+                : 'hidden'
+            }`}
+          >
             <button
-              onClick={() => navigate("/leads")}
-              className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                location.pathname === "/leads" ? "bg-gray-300" : ""
+              onClick={() => {
+                navigate('/leads');
+                setIsMenuOpen(false); // Close menu after navigation
+              }}
+              className={`block lg:inline-block px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                location.pathname === '/leads' ? 'bg-gray-300' : ''
               }`}
             >
               Leads
             </button>
             {!userRole && (
               <button
-                onClick={() => navigate("/employees")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/employees" ? "bg-gray-300" : ""
+                onClick={() => {
+                  navigate('/employees');
+                  setIsMenuOpen(false);
+                }}
+                className={`block lg:inline-block px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === '/employees' ? 'bg-gray-300' : ''
                 }`}
               >
                 Employees
@@ -31,26 +69,35 @@ const Navbar = ({ userRole, handleLogout }) => {
             )}
             {!userRole && (
               <button
-                onClick={() => navigate("/report")}
-                className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                  location.pathname === "/report" ? "bg-gray-300" : ""
+                onClick={() => {
+                  navigate('/report');
+                  setIsMenuOpen(false);
+                }}
+                className={`block lg:inline-block px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                  location.pathname === '/report' ? 'bg-gray-300' : ''
                 }`}
               >
                 Reports
               </button>
             )}
             <button
-              onClick={() => navigate("/sheduled")}
-              className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                location.pathname === "/sheduled" ? "bg-gray-300" : ""
+              onClick={() => {
+                navigate('/sheduled');
+                setIsMenuOpen(false);
+              }}
+              className={`block lg:inline-block px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                location.pathname === '/sheduled' ? 'bg-gray-300' : ''
               }`}
             >
               Scheduled
             </button>
             <button
-              onClick={() => navigate("/completed")}
-              className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                location.pathname === "/completed" ? "bg-gray-300" : ""
+              onClick={() => {
+                navigate('/completed');
+                setIsMenuOpen(false);
+              }}
+              className={`block lg:inline-block px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+                location.pathname === '/completed' ? 'bg-gray-300' : ''
               }`}
             >
               Completed
