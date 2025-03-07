@@ -35,7 +35,7 @@ const EmployeesPage = () => {
   const navigate = useNavigate();
 
   // Fetch user role
-  useEffect(() => {
+    useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         const userRef = doc(db, "EMPLOYEES", user.uid); // Assuming roles are stored in the EMPLOYEES collection

@@ -42,45 +42,6 @@ const HomePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ Fetch user role from Firestore
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          const userRef = doc(db, "EMPLOYEES", user.uid);
-          const docSnapshot = await getDoc(userRef);
-
-          if (docSnapshot.exists()) {
-            const userData = docSnapshot.data();
-            setUserRole(userData.Role?.toLowerCase() === "employee");
-
-            if (userData.Role?.toLowerCase() === "employee" && userData.leads) {
-              // Fetch assigned leads
-              const assignedLeads = [];
-              for (const leadId of userData.leads) {
-                const leadRef = doc(db, "LEADS", leadId);
-                const leadDoc = await getDoc(leadRef);
-                if (leadDoc.exists()) {
-                  assignedLeads.push({ id: leadDoc.id, ...leadDoc.data() });
-                }
-              }
-              setLeads(assignedLeads);
-            }
-          } else {
-            setUserRole(false);
-          }
-        } catch (error) {
-          console.error("Error fetching user role:", error);
-          setUserRole(false);
-        }
-      } else {
-        setUserRole(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
   // ✅ Fetch leads from Firestore
   useEffect(() => {
     const fetchLeads = async () => {
@@ -190,7 +151,6 @@ const HomePage = () => {
         contact: "",
         vehicle_number: "",
         vehicle_model: "",
-        delivery_date: "",
         sales_rep: "",
         status: "",
       });

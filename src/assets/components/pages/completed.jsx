@@ -24,52 +24,7 @@ const Completed = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      try {
-        // Fetch user role from Firestore
-        const userRef = doc(db, "role", user.uid);
-        const docSnapshot = await getDoc(userRef);
 
-        if (docSnapshot.exists()) {
-          const userData = docSnapshot.data();
-          console.log("User Role Data:", userData.role); // ✅ Debugging
-
-          setUserRole(userData.role.toLowerCase() === "admin"); // Case-insensitive check
-          
-          // If the user is an admin, fetch scheduled leads
-          if (userData.role.toLowerCase() === "admin") {
-            const scheduledRef = ref(database, "Sheduled"); // Assuming "Sheduled" is your Firebase node
-            const snapshot = await get(scheduledRef);
-
-            if (snapshot.exists()) {
-              const data = snapshot.val();
-              console.log("Fetched scheduled leads:", data); // ✅ Debugging
-              const scheduledArray = Object.keys(data).map((key) => ({
-                id: key,
-                ...data[key],
-              }));
-              setScheduledLeads(scheduledArray);
-            } else {
-              console.log("No scheduled leads found.");
-            }
-          }
-        } else {
-          console.log("No role found for user.");
-          setUserRole(false);
-        }
-      } catch (error) {
-        console.error("Error fetching user role or scheduled leads:", error);
-      }
-    } else {
-      console.log("No authenticated user.");
-      setUserRole(false);
-    }
-  });
-
-  return () => unsubscribe();
-}, []);
 
 useEffect(() => {
   const fetchCompletedLeads = async () => {

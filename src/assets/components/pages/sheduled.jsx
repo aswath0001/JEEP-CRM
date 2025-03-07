@@ -24,8 +24,9 @@ const Sheduled = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const [scheduledLeads, setScheduledLeads] = useState([]);
 
-  // Fetch user role
+ /* // Fetch user role
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -42,32 +43,28 @@ const Sheduled = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, []);*/
 
- // Fetch scheduled leads from Firebase
-useEffect(() => {
-  const fetchScheduledLeads = async () => {
-    try {
-      const scheduledRef = ref(database, "Sheduled"); // Assuming "Sheduled" is your Firebase node
-      const snapshot = await get(scheduledRef);
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        console.log("Fetched scheduled leads:", data); // Debugging
-        const scheduledArray = Object.keys(data).map((key) => ({
-          id: key,
-          ...data[key],
-        }));
-        setScheduledLeads(scheduledArray);
-      } else {
-        console.log("No scheduled leads found."); // Debugging
+    useEffect(() => {
+    const fetchScheduledLeads = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "SCHEDULED")); // Ensure correct Firestore collection name
+        if (!querySnapshot.empty) {
+          const leads = querySnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setScheduledLeads(leads);
+        } else {
+          console.log("No scheduled leads found.");
+        }
+      } catch (error) {
+        console.error("Error fetching scheduled leads:", error);
       }
-    } catch (error) {
-      console.error("Error fetching scheduled leads:", error);
-    }
-  };
+    };
 
-  fetchScheduledLeads();
-}, []);
+    fetchScheduledLeads();
+  }, []);
 
 
   // Timer logic
@@ -218,7 +215,7 @@ useEffect(() => {
     <div className="flex flex-col min-h-screen p-6 pt-24 font-poppins bg-gray-50">
     {/* Navigation Bar */}
     <Navbar userRole={userRole} handleLogout={handleLogout} />
-      <h2 className="text-2xl font-medium text-center my-2">Scheduled</h2>
+      <h2 className="text-2xl font-medium text-center my-2">Scheduled Leads</h2>
 
       {/* Leads Table */}
       <div className="mt-6 overflow-x-auto">
