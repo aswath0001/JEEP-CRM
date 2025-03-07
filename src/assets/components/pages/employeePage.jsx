@@ -251,6 +251,25 @@ const EmployeesPage = () => {
         </table>
       </div>
 
+      {/* Floating Add Employee Button */}
+      <button
+        className="fixed bottom-8 right-8 bg-green-600 text-white rounded-full p-4 shadow-lg hover:bg-green-700 transition-all"
+        onClick={() => {
+          setNewEmployee({
+            name: "",
+            Mobile_no: "",
+            Email_id: "",
+            password: "",
+            Role: "",
+            profilePicture: "",
+          });
+          setEditingEmployee(null); // Clear editing state
+          setShowEmployeeModal(true); // Open the modal
+        }}
+      >
+        <PlusCircle size={24} />
+      </button>
+
       {/* Add/Edit Employee Modal */}
       {showEmployeeModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
