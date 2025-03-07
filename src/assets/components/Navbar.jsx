@@ -14,8 +14,35 @@ const Navbar = ({ userRole, handleLogout }) => {
     <div className="bg-white shadow-sm fixed top-0 left-0 w-full z-50">
       <div className="container mx-auto px-6 py-4">
         <div className="flex justify-between items-center">
-          {/* Centered Navigation Menu */}
-          <nav className="flex space-x-4 mx-auto">
+          {/* Hamburger Menu for Mobile */}
+          <button
+            onClick={toggleMenu}
+            className="lg:hidden text-gray-700 focus:outline-none"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 6h16M4 12h16m-7 6h7"
+              ></path>
+            </svg>
+          </button>
+
+          {/* Centered Navigation Menu (Hidden on Mobile) */}
+          <nav
+            className={`lg:flex lg:space-x-4 lg:mx-auto ${
+              isMenuOpen
+                ? 'block absolute top-16 left-0 w-full bg-white shadow-lg'
+                : 'hidden'
+            }`}
+          >
             <button
               onClick={() => {
                 navigate('/leads');

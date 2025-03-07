@@ -173,7 +173,15 @@ const HomePage = () => {
     }
   };
 
-
+  // ✅ Logout Function
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen p-4 pt-20 font-poppins bg-gray-50">
