@@ -34,25 +34,6 @@ const EmployeesPage = () => {
 
   const navigate = useNavigate();
 
-  // Fetch user role
-    useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        const userRef = doc(db, "EMPLOYEES", user.uid); // Assuming roles are stored in the EMPLOYEES collection
-        getDoc(userRef).then((docSnapshot) => {
-          if (docSnapshot.exists()) {
-            const userData = docSnapshot.data();
-            setUserRole(userData.Role); // Set the user's role
-          }
-        });
-      } else {
-        setUserRole(null); // No user is logged in
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
   // Fetch employees from Firestore
   useEffect(() => {
     const fetchEmployees = async () => {

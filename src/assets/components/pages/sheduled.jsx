@@ -21,39 +21,22 @@ const Sheduled = () => {
   const [running, setRunning] = useState({});
   const [startTimes, setStartTimes] = useState({});
   const [userRole, setUserRole] = useState();
+  const [scheduledLeads, setScheduledLeads] = useState([]);
 
   const navigate = useNavigate();
   const location = useLocation();
-  const [scheduledLeads, setScheduledLeads] = useState([]);
 
- /* // Fetch user role
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        const userRef = doc(db, "Employees", user.uid); // Assuming roles are stored in a "users" collection
-        getDoc(userRef).then((docSnapshot) => {
-          if (docSnapshot.exists()) {
-            const userData = docSnapshot.data();
-            setUserRole(userData.role === "admin");
-          }
-        });
-      } else {
-        setUserRole(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);*/
-
-    useEffect(() => {
     const fetchScheduledLeads = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "SCHEDULED")); // Ensure correct Firestore collection name
+        console.log("Fetching scheduled leads...");
+        const querySnapshot = await getDocs(collection(db, "Sheduled")); // Ensure correct Firestore collection name
         if (!querySnapshot.empty) {
           const leads = querySnapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
           }));
+          console.log("Fetched leads:", leads);
           setScheduledLeads(leads);
         } else {
           console.log("No scheduled leads found.");
@@ -65,7 +48,6 @@ const Sheduled = () => {
 
     fetchScheduledLeads();
   }, []);
-
 
   // Timer logic
   useEffect(() => {
@@ -101,7 +83,7 @@ const Sheduled = () => {
       const totalTime = stopTime - startTime;
 
       // Move the lead to the Completed collection
-      const lead = leads.find((lead) => lead.id === leadId);
+      const lead = scheduledLeads.find((lead) => lead.id === leadId);
       if (lead) {
         const completedLead = {
           ...lead,
@@ -118,7 +100,7 @@ const Sheduled = () => {
           await deleteDoc(doc(db, "Sheduled", leadId));
 
           // Update local state
-          setLeads((prev) => prev.filter((lead) => lead.id !== leadId));
+          setScheduledLeads((prev) => prev.filter((lead) => lead.id !== leadId));
           setTimers((prev) => {
             const updatedTimers = { ...prev };
             delete updatedTimers[leadId];
@@ -194,7 +176,7 @@ const Sheduled = () => {
     if (window.confirm("Are you sure you want to delete this lead?")) {
       try {
         await deleteDoc(doc(db, "Sheduled", leadId));
-        setLeads((prev) => prev.filter((lead) => lead.id !== leadId));
+        setScheduledLeads((prev) => prev.filter((lead) => lead.id !== leadId));
       } catch (error) {
         console.error("Error deleting lead:", error);
       }
@@ -213,8 +195,8 @@ const Sheduled = () => {
 
   return (
     <div className="flex flex-col min-h-screen p-6 pt-24 font-poppins bg-gray-50">
-    {/* Navigation Bar */}
-    <Navbar userRole={userRole} handleLogout={handleLogout} />
+      {/* Navigation Bar */}
+      <Navbar userRole={userRole} handleLogout={handleLogout} />
       <h2 className="text-2xl font-medium text-center my-2">Scheduled Leads</h2>
 
       {/* Leads Table */}
@@ -233,7 +215,7 @@ const Sheduled = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {leads.map((lead) => (
+            {scheduledLeads.map((lead) => (
               <tr key={lead.id} className="hover:bg-gray-50 transition-all">
                 <td className="px-6 py-4 text-sm text-gray-700">{lead.name}</td>
                 <td className="px-6 py-4 text-sm text-gray-700">{lead.vehicle_number}</td>
