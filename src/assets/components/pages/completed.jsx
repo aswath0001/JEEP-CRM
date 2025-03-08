@@ -25,7 +25,7 @@ const Completed = () => {
   const location = useLocation();
 
   // Fetch user role
-  useEffect(() => {
+ /* useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         const userRef = doc(db, "EMPLOYEES", user.uid);
@@ -41,7 +41,7 @@ const Completed = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, []);*/
 
   // Fetch completed leads from Firestore
   useEffect(() => {

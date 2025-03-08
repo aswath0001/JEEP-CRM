@@ -14,6 +14,49 @@ const Navbar = ({ userRole, handleLogout }) => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  // Helper function to render a navigation button
+  const renderButton = (path, label) => (
+    <button
+      onClick={() => {
+        navigate(path);
+        setIsMenuOpen(false);
+      }}
+      className={`block lg:inline-block px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
+        location.pathname === path ? 'bg-gray-300' : ''
+      }`}
+    >
+      {label}
+    </button>
+  );
+
+  // Function to render navigation buttons based on userRole
+  const renderNavButtons = () => {
+   /* if (userRole === "Employee") {
+      // For employees, show only Leads, Scheduled, and Completed
+      return (
+        <>
+          {renderButton('/leads', 'Leads')}
+          {renderButton('/sheduled', 'Scheduled')}
+          {renderButton('/completed', 'Completed')}
+        </>
+      );x
+    }*/ if (userRole === undefined || userRole === null) {
+      // For admins, show all buttons
+      return (
+        <>
+          {renderButton('/leads', 'Leads')}
+          {renderButton('/employees', 'Employees')}
+          {renderButton('/report', 'Reports')}
+          {renderButton('/sheduled', 'Scheduled')}
+          {renderButton('/completed', 'Completed')}
+        </>
+      );
+    } else {
+      // If userRole is undefined or unknown, show no buttons (or handle this case differently)
+      return null;
+    }
+  };
+
   return (
     <div className="bg-white shadow-sm fixed top-0 left-0 w-full z-50">
       <div className="container mx-auto px-6 py-4">
@@ -47,69 +90,7 @@ const Navbar = ({ userRole, handleLogout }) => {
                 : 'hidden'
             }`}
           >
-            <button
-              onClick={() => {
-                navigate('/leads');
-                setIsMenuOpen(false); // Close menu after navigation
-              }}
-              className={`block lg:inline-block px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                location.pathname === '/leads' ? 'bg-gray-300' : ''
-              }`}
-            >
-              Leads
-            </button>
-
-            {/* Show these only for admins */}
-            {!userRole  && (
-              <>
-                <button
-                  onClick={() => {
-                    console.log("Rendering Employees button");
-                    navigate("/employees");
-                  }}
-                  className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                    location.pathname === "/employees" ? "bg-gray-300" : ""
-                  }`}
-                >
-                  Employees
-                </button>
-                <button
-                  onClick={() => {
-                    console.log("Rendering Reports button");
-                    navigate("/report");
-                  }}
-                  className={`px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                    location.pathname === "/report" ? "bg-gray-300" : ""
-                  }`}
-                >
-                  Reports
-                </button>
-              </>
-            )}
-
-            {/* Common buttons for both roles */}
-            <button
-              onClick={() => {
-                navigate('/sheduled');
-                setIsMenuOpen(false);
-              }}
-              className={`block lg:inline-block px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                location.pathname === '/sheduled' ? 'bg-gray-300' : ''
-              }`}
-            >
-              Scheduled
-            </button>
-            <button
-              onClick={() => {
-                navigate('/completed');
-                setIsMenuOpen(false);
-              }}
-              className={`block lg:inline-block px-4 py-2 rounded-lg text-gray-700 hover:text-blue-500 transition-all ${
-                location.pathname === '/completed' ? 'bg-gray-300' : ''
-              }`}
-            >
-              Completed
-            </button>
+            {renderNavButtons()}
           </nav>
 
           {/* Logout Button */}

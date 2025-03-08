@@ -13,10 +13,10 @@ import Navbar from "./assets/components/Navbar";
 import ProtectedRoute from "./assets/components/protectroute";
 
 function App() {
-  const [userRole, setUserRole] = useState(null);
+  const [userRole, setUserRole] = useState("");
 
  
-  useEffect(() => {
+ /* useEffect(() => {
     const fetchUserRole = async (user) => {
       if (!user) {
         console.log("No authenticated user.");
@@ -35,11 +35,15 @@ function App() {
           console.log("User document found:", userData);
 
           const role = userData.Role?.toLowerCase(); // Ensure case consistency
-          if (role === "employee") {
+         /* if (role === "employee") {
             setUserRole("Employee");
           } else {
-            setUserRole("");
-          }
+            setUserRole(); // Default to Admin if role isn't Employee
+          }if (role === "admin") {
+            setUserRole("Admin");
+          } else {                
+            setUserRole("Employee"); // Default to Admin if role isn't Employee
+          }           
         } else {
           console.log("No user document found.");
           setUserRole(""); // Default to Admin if user document isn't found
@@ -52,7 +56,7 @@ function App() {
     onAuthStateChanged(auth, (user) => {
       fetchUserRole(user);
     });
-  }, []);;
+  }, []);;*/
 
   const handleLogout = async () => {
       try {
@@ -127,6 +131,23 @@ function AppContent({userRole, handleLogout}) {
           element={
             <ProtectedRoute>
               <Completed />
+            </ProtectedRoute>
+          }
+        />
+       
+        <Route
+          path="/employee-dashboard"
+          element={
+            <ProtectedRoute requiredRole="Employee">
+              <EmployeeDashboard />
+            </ProtectedRoute>
+          }
+          />
+          <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute requiredRole="Admin">
+              <AdminDashboard />
             </ProtectedRoute>
           }
         />
