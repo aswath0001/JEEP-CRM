@@ -1,7 +1,9 @@
 import React from 'react';
 import Navbar from '../Navbar'; // Import the Navbar component
+import { useNavigate } from 'react-router-dom';
 
 const EmployeeDashboard = () => {
+  const navigate = useNavigate(); 
   const handleLogout = () => {
     console.log("Employee logged out");
     // Add logout logic here (e.g., clear session, redirect to login page)
@@ -22,7 +24,7 @@ const EmployeeDashboard = () => {
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Leads</h2>
             <p className="text-gray-600">View and manage leads assigned to you.</p>
             <button
-              onClick={() => console.log("Navigate to Leads")}
+              onClick={() => navigate('/leads')} // Navigate to the Leads page
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all"
             >
               View Leads
@@ -34,8 +36,8 @@ const EmployeeDashboard = () => {
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Scheduled Tasks</h2>
             <p className="text-gray-600">Check your scheduled tasks and deadlines.</p>
             <button
-              onClick={() => console.log("Navigate to Scheduled Tasks")}
-              className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all"
+              onClick={() => navigate('/sheduled')} // Navigate to the Scheduled Tasks page
+              className="mt-4 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all"
             >
               View Scheduled
             </button>
@@ -46,8 +48,8 @@ const EmployeeDashboard = () => {
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Completed Tasks</h2>
             <p className="text-gray-600">Review tasks you've completed.</p>
             <button
-              onClick={() => console.log("Navigate to Completed Tasks")}
-              className="mt-4 bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-all"
+              onClick={() => navigate('/completed')} // Navigate to the Completed Tasks page
+              className="mt-4 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all"
             >
               View Completed
             </button>

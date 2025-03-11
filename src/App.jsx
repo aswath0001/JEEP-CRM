@@ -11,6 +11,8 @@ import Sheduled from "./assets/components/pages/sheduled";
 import Completed from "./assets/components/pages/completed";
 import Navbar from "./assets/components/Navbar";
 import ProtectedRoute from "./assets/components/protectroute";
+import EmployeeDashboard from "./assets/components/pages/employee-dashboard";
+import AdminDashboard from "./assets/components/pages/admin-dashboard";
 
 function App() {
   const [userRole, setUserRole] = useState("");
@@ -135,7 +137,7 @@ function AppContent({userRole, handleLogout}) {
           }
         />
        
-        <Route
+       <Route
           path="/employee-dashboard"
           element={
             <ProtectedRoute requiredRole="Employee">
@@ -151,7 +153,6 @@ function AppContent({userRole, handleLogout}) {
             </ProtectedRoute>
           }
         />
-
         {/* Redirect after login */}
         <Route path="/home" element={<Navigate to="/leads" replace />} />
       </Routes>
